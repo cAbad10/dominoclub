@@ -15,22 +15,25 @@ function FeltCanvas() {
       canvas.height = parent.offsetHeight
       const ctx = canvas.getContext('2d')
       const W = canvas.width, H = canvas.height
-      ctx.fillStyle = '#1a3a2a'
+      ctx.fillStyle = '#1b3d2a'
       ctx.fillRect(0, 0, W, H)
-      ctx.strokeStyle = 'rgba(255,255,255,0.03)'
+      // Subtle felt texture grid
+      ctx.strokeStyle = 'rgba(255,255,255,0.025)'
       ctx.lineWidth = 1
-      for (let x = 0; x < W; x += 34) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke() }
-      for (let y = 0; y < H; y += 34) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke() }
-      ctx.strokeStyle = 'rgba(255,255,255,0.055)'
+      for (let x = 0; x < W; x += 32) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke() }
+      for (let y = 0; y < H; y += 32) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke() }
+      // Center oval border
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)'
       ctx.lineWidth = 2
       ctx.beginPath()
-      ctx.ellipse(W / 2, H / 2, W * 0.35, H * 0.38, 0, 0, Math.PI * 2)
+      ctx.ellipse(W / 2, H / 2, W * 0.38, H * 0.4, 0, 0, Math.PI * 2)
       ctx.stroke()
-      ;[[16, 16], [W - 16, 16], [16, H - 16], [W - 16, H - 16]].forEach(([cx, cy]) => {
-        ctx.strokeStyle = 'rgba(255,255,255,0.06)'
+      // Corner ornaments
+      ;[[20, 20], [W - 20, 20], [20, H - 20], [W - 20, H - 20]].forEach(([cx, cy]) => {
+        ctx.strokeStyle = 'rgba(255,255,255,0.07)'
         ctx.lineWidth = 1.5
-        ctx.beginPath(); ctx.arc(cx, cy, 9, 0, Math.PI * 2); ctx.stroke()
-        ctx.beginPath(); ctx.arc(cx, cy, 3, 0, Math.PI * 2); ctx.stroke()
+        ctx.beginPath(); ctx.arc(cx, cy, 10, 0, Math.PI * 2); ctx.stroke()
+        ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2); ctx.stroke()
       })
     }
     draw()
@@ -46,30 +49,25 @@ function Nameplate({ player, isActive, handCount, orientation = 'h' }) {
   const tc = player.team === 1 ? 'var(--t1)' : 'var(--t2)'
   const count = handCount || 0
   const danger = count === 1
-  const show = Math.min(count, orientation === 'v' ? 7 : 9)
-
+  const show = Math.min(count, orientation === 'v' ? 6 : 8)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '.2rem', padding: '.2rem' }}>
-      <div style={{ width: 6, height: 6, borderRadius: '50%', background: isActive ? 'var(--green)' : 'var(--surf3)' }} />
-      <div style={{ fontSize: '.66rem', fontWeight: 700, fontFamily: 'var(--mono)', color: tc, whiteSpace: 'nowrap', maxWidth: 68, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-        {player.name || '?'}
+      <div style={{ width: 7, height: 7, borderRadius: '50%', background: isActive ? '#4caf7d' : 'var(--surf3)', boxShadow: isActive ? '0 0 6px #4caf7d' : 'none' }} />
+      <div style={{ fontSize: '.66rem', fontWeight: 700, fontFamily: 'var(--mono)', color: tc, whiteSpace: 'nowrap', maxWidth: 66, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {player.name}
       </div>
-      <div style={{ fontSize: '.55rem', color: 'var(--tx3)', fontFamily: 'var(--mono)' }}>
-        T{player.team} · {count}
-      </div>
-      <div style={{ display: 'flex', flexDirection: orientation === 'v' ? 'column' : 'row', gap: 2 }}>
+      <div style={{ fontSize: '.55rem', color: 'var(--tx3)', fontFamily: 'var(--mono)' }}>T{player.team} · {count}</div>
+      <div style={{ display: 'flex', flexDirection: orientation === 'v' ? 'column' : 'row', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
         {Array.from({ length: show }).map((_, i) => (
           <div key={i} style={{
-            width: orientation === 'v' ? 11 : 19,
-            height: orientation === 'v' ? 19 : 11,
-            borderRadius: 3,
+            width: orientation === 'v' ? 10 : 16,
+            height: orientation === 'v' ? 16 : 10,
+            borderRadius: 2,
             background: danger ? '#5a1a1a' : 'var(--surf3)',
             border: `1px solid ${danger ? 'var(--red)' : 'var(--br2)'}`,
           }} />
         ))}
-        {count > show && (
-          <div style={{ fontSize: '.5rem', color: 'var(--tx3)', fontFamily: 'var(--mono)' }}>+{count - show}</div>
-        )}
+        {count > show && <div style={{ fontSize: '.5rem', color: 'var(--tx3)', fontFamily: 'var(--mono)' }}>+{count - show}</div>}
       </div>
     </div>
   )
@@ -85,25 +83,113 @@ function DropZone({ side, value, active, onDrop, onClick }) {
       onDrop={e => {
         e.preventDefault(); setOver(false)
         if (!active) return
-        try {
-          const d = JSON.parse(e.dataTransfer.getData('text/plain'))
-          if (d && d.tile) onDrop(d.tile, side)
-        } catch (_) { }
+        try { const d = JSON.parse(e.dataTransfer.getData('text/plain')); if (d?.tile) onDrop(d.tile, side) } catch (_) {}
       }}
       onClick={() => { if (active) onClick(side) }}
       style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        border: `2px dashed ${over ? 'var(--gold)' : active ? 'var(--green)' : 'rgba(255,255,255,0.1)'}`,
-        borderRadius: 7, cursor: active ? 'pointer' : 'default',
-        minWidth: 42, minHeight: 30, padding: '2px 6px', flexShrink: 0,
-        background: over ? 'rgba(212,168,67,0.1)' : 'transparent',
-        animation: active && !over ? 'dp 1.1s infinite' : 'none',
-        transition: 'border-color .15s, background .15s',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        border: `2px dashed ${over ? '#d4a843' : active ? '#4caf7d' : 'rgba(255,255,255,0.12)'}`,
+        borderRadius: 8, cursor: active ? 'pointer' : 'default',
+        width: 44, minHeight: 66, padding: '4px',
+        background: over ? 'rgba(212,168,67,0.12)' : active ? 'rgba(76,175,125,0.05)' : 'transparent',
+        animation: active && !over ? 'dp 1.2s ease-in-out infinite' : 'none',
+        transition: 'all .15s', flexShrink: 0,
       }}
     >
-      <span style={{ fontSize: '.55rem', fontFamily: 'var(--mono)', color: 'rgba(255,255,255,.25)', whiteSpace: 'nowrap' }}>
-        {side === 'left' ? '← ' : ''}[{value ?? '?'}]{side === 'right' ? ' →' : ''}
-      </span>
+      <div style={{ fontSize: '.55rem', fontFamily: 'var(--mono)', color: over ? '#d4a843' : active ? '#4caf7d' : 'rgba(255,255,255,.2)', marginBottom: 2 }}>
+        {side === 'left' ? '←' : '→'}
+      </div>
+      <div style={{ fontSize: '.65rem', fontFamily: 'var(--mono)', color: over ? '#d4a843' : 'rgba(255,255,255,.3)', fontWeight: 700 }}>
+        {value ?? '?'}
+      </div>
+    </div>
+  )
+}
+
+// ── CUBAN CHAIN BOARD ─────────────────────────────────────────────────────────
+// Cuban style: tiles go horizontal, doubles are perpendicular (horizontal tile)
+// Chain snakes: goes right → turns down-right → continues left → turns down-left → right again
+// Each "row" holds up to MAX_ROW tiles before turning
+
+const TILE_W = 34   // vertical domino width on board
+const TILE_H = 64   // vertical domino height on board
+const DBL_W = 64    // double (horizontal) width
+const DBL_H = 34    // double (horizontal) height
+const GAP = 4
+
+function CubanChain({ chain, canL, canR, onDrop, onEndClick }) {
+  if (!chain.length) return null
+
+  const MAX_ROW = 7  // tiles per row before snake turn
+
+  // Build positioned tiles
+  // We'll lay out in rows, snaking right→left→right
+  const items = []
+  let x = 0
+  let y = 0
+  let dir = 1  // 1 = right, -1 = left
+  let rowCount = 0
+
+  const ROW_H = TILE_H + GAP
+  const stepRight = TILE_W + GAP
+  const stepLeft = -(TILE_W + GAP)
+
+  // Starting x depends on direction — right starts left, left starts right
+  // We'll normalise after computing all positions
+  let curX = 0
+  let curY = 0
+
+  chain.forEach((entry, i) => {
+    const isDouble = entry.tile[0] === entry.tile[1]
+    const tW = isDouble ? DBL_W : TILE_W
+    const tH = isDouble ? DBL_H : TILE_H
+
+    // Center doubles vertically within the row
+    const yOffset = isDouble ? (TILE_H - DBL_H) / 2 : 0
+
+    items.push({
+      entry,
+      x: curX,
+      y: curY + yOffset,
+      w: tW,
+      h: tH,
+      isDouble,
+    })
+
+    rowCount++
+
+    if (rowCount >= MAX_ROW && i < chain.length - 1) {
+      // Turn: move down and reverse direction
+      curY += ROW_H + GAP
+      // Stay at same x (corner)
+      dir *= -1
+      rowCount = 0
+    } else {
+      curX += dir * (tW + GAP)
+    }
+  })
+
+  // Normalise — shift all x so minimum x = 0
+  const minX = Math.min(...items.map(it => it.x))
+  const maxX = Math.max(...items.map(it => it.x + it.w))
+  const maxY = Math.max(...items.map(it => it.y + it.h))
+  items.forEach(it => { it.x -= minX })
+  const totalW = maxX - minX
+  const totalH = maxY
+
+  return (
+    <div style={{ position: 'relative', width: totalW, height: totalH, flexShrink: 0 }}>
+      {items.map(({ entry, x, y, w, h, isDouble }, i) => (
+        <div key={i} style={{ position: 'absolute', left: x, top: y }}>
+          <Domino
+            tile={entry.tile}
+            flipped={entry.flipped || false}
+            horizontal={isDouble}
+            onBoard
+            size="normal"
+          />
+        </div>
+      ))}
     </div>
   )
 }
@@ -114,8 +200,7 @@ export default function GameScreen({ room, myId, myHand, onPlayTile, onPass, onL
   const [ghostTile, setGhostTile] = useState(null)
   const [ghostPos, setGhostPos] = useState({ x: 0, y: 0 })
 
-  // Guard — don't render if data isn't ready yet
-  if (!room || !room.game || !room.players || !myId) {
+  if (!room?.game || !room?.players || !myId) {
     return (
       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
         <div style={{ color: 'var(--tx2)', fontFamily: 'var(--mono)', fontSize: '.85rem' }}>Loading game...</div>
@@ -135,9 +220,8 @@ export default function GameScreen({ room, myId, myHand, onPlayTile, onPass, onL
   const { L, R } = getChainEnds(chain)
   const hasPlayable = myHandSafe.some(t => canPlayTile(t, chain))
 
-  // Seat rotation: me=bottom, +1=left, +2=top, +3=right
   const myIdx = players.findIndex(p => p.id === myId)
-  const getPlayer = (offset) => players.length > 0 ? players[(myIdx + offset) % players.length] || null : null
+  const getPlayer = offset => players.length > 0 ? players[(myIdx + offset) % players.length] || null : null
   const leftPlayer = getPlayer(1)
   const topPlayer = getPlayer(2)
   const rightPlayer = getPlayer(3)
@@ -146,9 +230,8 @@ export default function GameScreen({ room, myId, myHand, onPlayTile, onPass, onL
   const canR = isMyTurn && chain.length > 0 && myHandSafe.some(t => canPlayTile(t, chain) && tileMatchesEnd(t, R))
   const showEndBtns = isMyTurn && selectedIdx !== null && chain.length > 0
 
-  // Ghost drag follow
   useEffect(() => {
-    const move = (e) => { if (ghostTile) setGhostPos({ x: e.clientX, y: e.clientY }) }
+    const move = e => { if (ghostTile) setGhostPos({ x: e.clientX, y: e.clientY }) }
     document.addEventListener('dragover', move)
     return () => document.removeEventListener('dragover', move)
   }, [ghostTile])
@@ -163,7 +246,6 @@ export default function GameScreen({ room, myId, myHand, onPlayTile, onPass, onL
     const fR = tileMatchesEnd(tile, R)
     if (fL && !fR) { onPlayTile(tile, 'left'); setSelectedIdx(null) }
     else if (!fL && fR) { onPlayTile(tile, 'right'); setSelectedIdx(null) }
-    // else wait for end selection
   }
 
   function handleEndChoice(side) {
@@ -197,16 +279,14 @@ export default function GameScreen({ room, myId, myHand, onPlayTile, onPass, onL
         <div className="ti">Turn: <span>{curPlayerName}</span></div>
       </div>
 
-      {/* TOP-LEFT CORNER */}
+      {/* CORNERS */}
       <div className="tcn" style={{ gridArea: 'tl', borderRight: '1px solid var(--br)' }} />
+      <div className="tcn" style={{ gridArea: 'tr', borderLeft: '1px solid var(--br)' }} />
 
       {/* TOP PLAYER */}
       <div style={{ gridArea: 'top', background: 'var(--surf)', borderBottom: '1px solid var(--br2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1.2rem', padding: '0 .8rem' }}>
         <Nameplate player={topPlayer} isActive={topPlayer?.id === game.currentPlayerId} handCount={handCounts[topPlayer?.id] ?? 0} orientation="h" />
       </div>
-
-      {/* TOP-RIGHT CORNER */}
-      <div className="tcn" style={{ gridArea: 'tr', borderLeft: '1px solid var(--br)' }} />
 
       {/* LEFT PLAYER */}
       <div style={{ gridArea: 'lft', background: 'var(--surf)', borderRight: '1px solid var(--br)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '.4rem .2rem' }}>
@@ -216,22 +296,29 @@ export default function GameScreen({ room, myId, myHand, onPlayTile, onPass, onL
       {/* TABLE */}
       <div style={{ gridArea: 'tbl', position: 'relative', overflow: 'hidden' }}>
         <FeltCanvas />
-        <div style={{ position: 'absolute', inset: 0, overflow: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 3, maxWidth: 520, padding: '1rem', justifyContent: 'center' }}>
-            {chain.length === 0 ? (
-              <div style={{ color: 'rgba(255,255,255,.15)', fontFamily: 'var(--mono)', fontSize: '.72rem' }}>
-                {isMyTurn ? 'Play your first tile' : 'Waiting for first tile...'}
-              </div>
-            ) : (
-              <>
-                <DropZone side="left" value={L} active={canL} onDrop={handleDrop} onClick={handleEndChoice} />
-                {chain.map((entry, i) => (
-                  <Domino key={i} tile={entry.tile} flipped={entry.flipped || false} onBoard />
-                ))}
-                <DropZone side="right" value={R} active={canR} onDrop={handleDrop} onClick={handleEndChoice} />
-              </>
-            )}
-          </div>
+        <div style={{ position: 'absolute', inset: 0, overflow: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          {chain.length === 0 ? (
+            <div style={{ color: 'rgba(255,255,255,.15)', fontFamily: 'var(--mono)', fontSize: '.75rem', textAlign: 'center' }}>
+              {isMyTurn ? 'Play your first tile to start' : 'Waiting for first tile...'}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: GAP }}>
+              {/* Left drop zone */}
+              <DropZone side="left" value={L} active={canL} onDrop={handleDrop} onClick={handleEndChoice} />
+
+              {/* Cuban chain */}
+              <CubanChain
+                chain={chain}
+                canL={canL}
+                canR={canR}
+                onDrop={handleDrop}
+                onEndClick={handleEndChoice}
+              />
+
+              {/* Right drop zone */}
+              <DropZone side="right" value={R} active={canR} onDrop={handleDrop} onClick={handleEndChoice} />
+            </div>
+          )}
         </div>
       </div>
 
@@ -240,8 +327,8 @@ export default function GameScreen({ room, myId, myHand, onPlayTile, onPass, onL
         <Nameplate player={rightPlayer} isActive={rightPlayer?.id === game.currentPlayerId} handCount={handCounts[rightPlayer?.id] ?? 0} orientation="v" />
       </div>
 
-      {/* HAND */}
-      <div style={{ gridArea: 'hnd', background: 'var(--surf)', borderTop: '2px solid var(--br2)', display: 'flex', flexDirection: 'column', padding: '.5rem .8rem .4rem', gap: '.35rem' }}>
+      {/* HAND TRAY */}
+      <div style={{ gridArea: 'hnd', background: 'var(--surf)', borderTop: '2px solid var(--br2)', display: 'flex', flexDirection: 'column', padding: '.5rem .9rem .4rem', gap: '.35rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '.45rem' }}>
@@ -252,7 +339,9 @@ export default function GameScreen({ room, myId, myHand, onPlayTile, onPass, onL
             </div>
             <div className="hhin">
               {isMyTurn
-                ? hasPlayable ? 'Drag to a drop zone · or click tile then pick end' : 'No moves — you must pass'
+                ? hasPlayable
+                  ? 'Drag tile to ← or → · or click tile then choose end'
+                  : 'No playable tiles — pass'
                 : 'Waiting for your turn...'}
             </div>
           </div>
@@ -269,7 +358,8 @@ export default function GameScreen({ room, myId, myHand, onPlayTile, onPass, onL
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 5, alignItems: 'flex-end', overflowX: 'auto', paddingBottom: 2, minHeight: 64 }}>
+        {/* Hand tiles */}
+        <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', overflowX: 'auto', paddingBottom: 3, minHeight: 68 }}>
           {myHandSafe.map((tile, idx) => {
             if (!tile || !Array.isArray(tile)) return null
             const playable = isMyTurn && canPlayTile(tile, chain)
@@ -282,11 +372,10 @@ export default function GameScreen({ room, myId, myHand, onPlayTile, onPass, onL
                 playable={playable && !sel}
                 disabled={!isMyTurn || !playable}
                 onClick={() => handleTileClick(idx)}
-                onDragStart={playable ? (e) => {
+                onDragStart={playable ? e => {
                   e.dataTransfer.setData('text/plain', JSON.stringify({ tile, idx }))
                   e.dataTransfer.effectAllowed = 'move'
-                  const blank = document.createElement('canvas')
-                  blank.width = 1; blank.height = 1
+                  const blank = document.createElement('canvas'); blank.width = 1; blank.height = 1
                   e.dataTransfer.setDragImage(blank, 0, 0)
                   setGhostTile(tile)
                   setGhostPos({ x: e.clientX, y: e.clientY })
@@ -300,11 +389,7 @@ export default function GameScreen({ room, myId, myHand, onPlayTile, onPass, onL
 
       {/* DRAG GHOST */}
       {ghostTile && (
-        <div style={{
-          position: 'fixed', left: ghostPos.x, top: ghostPos.y,
-          transform: 'translate(-50%,-50%) scale(1.07)',
-          pointerEvents: 'none', zIndex: 9999, opacity: .9,
-        }}>
+        <div style={{ position: 'fixed', left: ghostPos.x, top: ghostPos.y, transform: 'translate(-50%,-50%) scale(1.1)', pointerEvents: 'none', zIndex: 9999, opacity: .9 }}>
           <Domino tile={ghostTile} />
         </div>
       )}

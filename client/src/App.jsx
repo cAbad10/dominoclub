@@ -524,6 +524,8 @@ export default function App() {
               capicu={roundResult.capicu} blocked={roundResult.blocked}
               isHost={room.hostId === myId || isDemo}
               onNextRound={handleNextRound}
+              players={room.players}
+              hands={room.game?.hands}
             />
           )}
           {gameResult && (
@@ -531,6 +533,8 @@ export default function App() {
               scores={gameResult.scores} winTeam={gameResult.winTeam}
               onPlayAgain={isDemo ? startDemo : () => emit('game:start', {})}
               onHome={reset}
+              players={room.players}
+              hands={room.game?.hands}
             />
           )}
         </>
