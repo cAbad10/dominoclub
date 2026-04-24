@@ -117,6 +117,8 @@ export default function App() {
   const [isDemo, setIsDemo] = useState(false)
   const [createForm, setCreateForm] = useState({ name: '', mode: 'teams', target: 100 })
   const [joinForm, setJoinForm] = useState({ name: '', code: '' })
+  const [demoForm, setDemoForm] = useState({ mode: 'teams', target: 100 })
+  const [scoreHistory, setScoreHistory] = useState([])
 
   // refs so bot callbacks always see latest state without stale closures
   const roomRef = useRef(null)
@@ -169,7 +171,7 @@ export default function App() {
     roomRef.current = null
     setScreen('home'); setRoom(null); setMyId(null)
     setMyHand([]); setRoundResult(null); setGameResult(null)
-    setIsDemo(false)
+    setIsDemo(false); setScoreHistory([])
   }
 
   // ── ONLINE ───────────────────────────────────────────────────────────────────
@@ -192,9 +194,10 @@ export default function App() {
   }
 
   // ── DEMO: INIT ───────────────────────────────────────────────────────────────
-  function startDemo() {
+  function startDemo(settings) {
     clearTimeout(botTimer.current)
     demoActive.current = true
+    const cfg = settings || demoForm
 
     const hands = dealHands(DEMO_PLAYERS, 10)
     const firstId = findFirst(hands, DEMO_PLAYERS)
@@ -202,7 +205,7 @@ export default function App() {
     DEMO_PLAYERS.forEach(p => { handCounts[p.id] = hands[p.id].length })
 
     const initialRoom = {
-      code: 'DEMO', mode: 'teams', target: 100,
+      code: 'DEMO', mode: cfg.mode, target: cfg.target,
       hostId: 'you', phase: 'playing',
       players: DEMO_PLAYERS, chat: [],
       game: {
@@ -211,6 +214,7 @@ export default function App() {
         scores: { t1: 0, t2: 0 },
         consecutivePasses: 0,
         handCounts,
+        roundNum: 1,
       },
     }
 
@@ -219,6 +223,7 @@ export default function App() {
     setMyHand([...hands['you']])
     setRoundResult(null)
     setGameResult(null)
+    setScoreHistory([])
     syncRoom(initialRoom)
     setScreen('game')
 
@@ -385,6 +390,18 @@ export default function App() {
 
     setRoom(r => r ? { ...r, game: { ...r.game, scores } } : r)
 
+    // Record this round in history
+    const roundNum = currentRoom.game.roundNum || 1
+    setScoreHistory(h => [...h, {
+      round: roundNum,
+      t1: scores.t1,
+      t2: scores.t2,
+      winTeam,
+      points,
+      capicu: cap,
+      blocked: !winnerId,
+    }])
+
     if (scores.t1 >= target || scores.t2 >= target) {
       setGameResult({ scores, winTeam: scores.t1 >= target ? 1 : 2 })
     } else {
@@ -414,6 +431,7 @@ export default function App() {
         scores: prev.game.scores,
         consecutivePasses: 0,
         handCounts,
+        roundNum: (prev.game.roundNum || 1) + 1,
       },
     }
 
@@ -443,8 +461,45 @@ export default function App() {
         <HomeScreen
           onCreate={() => setScreen('create')}
           onJoin={() => setScreen('join')}
-          onDemo={startDemo}
+          onDemo={() => setScreen('demoSetup')}
         />
+      )}
+
+      {screen === 'demoSetup' && (
+        <div className="screen">
+          <button className="bk" onClick={() => setScreen('home')}>← Back</button>
+          <div className="fp">
+            <div className="ftt">Play vs Bots</div>
+            <div style={{ display: 'flex', gap: '.5rem', marginBottom: '1rem', background: 'var(--surf2)', borderRadius: 10, padding: 4 }}>
+              <div style={{ flex: 1, textAlign: 'center', padding: '.6rem', background: 'var(--surf3)', borderRadius: 8, fontSize: '.8rem' }}>
+                <div style={{ fontSize: '.65rem', color: 'var(--tx3)', fontFamily: 'var(--mono)', marginBottom: 2 }}>You + Ana</div>
+                <div style={{ color: 'var(--t1)', fontWeight: 700, fontSize: '.8rem' }}>Team 1</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', color: 'var(--tx3)', fontSize: '.8rem' }}>vs</div>
+              <div style={{ flex: 1, textAlign: 'center', padding: '.6rem', background: 'var(--surf3)', borderRadius: 8, fontSize: '.8rem' }}>
+                <div style={{ fontSize: '.65rem', color: 'var(--tx3)', fontFamily: 'var(--mono)', marginBottom: 2 }}>Carlos + Roberto</div>
+                <div style={{ color: 'var(--t2)', fontWeight: 700, fontSize: '.8rem' }}>Team 2</div>
+              </div>
+            </div>
+            <div className="fg">
+              <label className="fl">Game Mode</label>
+              <div className="pills">
+                <button className={'pill ' + (demoForm.mode === 'teams' ? 'on' : '')} onClick={() => setDemoForm(f => ({ ...f, mode: 'teams' }))}>Teams 2v2</button>
+                <button className={'pill ' + (demoForm.mode === 'ffa' ? 'on' : '')} onClick={() => setDemoForm(f => ({ ...f, mode: 'ffa' }))}>Free-for-All</button>
+              </div>
+            </div>
+            <div className="fg">
+              <label className="fl">Points to Win</label>
+              <select className="fi" value={demoForm.target} onChange={e => setDemoForm(f => ({ ...f, target: parseInt(e.target.value) }))}>
+                <option value={50}>50 pts (Quick)</option>
+                <option value={100}>100 pts (Standard)</option>
+                <option value={150}>150 pts</option>
+                <option value={200}>200 pts</option>
+              </select>
+            </div>
+            <button className="btn bp" onClick={() => startDemo(demoForm)}>Start Game →</button>
+          </div>
+        </div>
       )}
 
       {screen === 'create' && (
@@ -517,6 +572,7 @@ export default function App() {
             onPlayTile={handlePlayTile}
             onPass={handlePass}
             onLeave={() => { if (!isDemo) emit('room:leave', {}); reset() }}
+            scoreHistory={scoreHistory}
           />
           {roundResult && (
             <RoundModal
@@ -526,15 +582,19 @@ export default function App() {
               onNextRound={handleNextRound}
               players={room.players}
               hands={room.game?.hands}
+              scoreHistory={scoreHistory}
+              target={room.target}
             />
           )}
           {gameResult && (
             <WinModal
               scores={gameResult.scores} winTeam={gameResult.winTeam}
-              onPlayAgain={isDemo ? startDemo : () => emit('game:start', {})}
+              onPlayAgain={isDemo ? () => startDemo(demoForm) : () => emit('game:start', {})}
               onHome={reset}
               players={room.players}
               hands={room.game?.hands}
+              scoreHistory={scoreHistory}
+              target={room.target}
             />
           )}
         </>

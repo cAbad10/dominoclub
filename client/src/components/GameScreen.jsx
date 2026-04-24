@@ -195,7 +195,7 @@ function CubanChain({ chain, canL, canR, onDrop, onEndClick }) {
 }
 
 // ── GAME SCREEN ───────────────────────────────────────────────────────────────
-export default function GameScreen({ room, myId, myHand, onPlayTile, onPass, onLeave }) {
+export default function GameScreen({ room, myId, myHand, onPlayTile, onPass, onLeave, scoreHistory }) {
   const [selectedIdx, setSelectedIdx] = useState(null)
   const [ghostTile, setGhostTile] = useState(null)
   const [ghostPos, setGhostPos] = useState({ x: 0, y: 0 })
@@ -261,9 +261,10 @@ export default function GameScreen({ room, myId, myHand, onPlayTile, onPass, onL
   }
 
   const curPlayerName = players.find(p => p.id === game.currentPlayerId)?.name || '—'
+  const [showHistory, setShowHistory] = useState(false)
 
   return (
-    <div className="game-grid">
+    <div className="game-grid" style={{ position: "relative" }}>
 
       {/* HEADER */}
       <div className="ghdr">
@@ -276,8 +277,49 @@ export default function GameScreen({ room, myId, myHand, onPlayTile, onPass, onL
           <div className="sd">—</div>
           <div className="sb"><div className="st tc2">Team 2</div><div className="sn tc2">{scores.t2}</div></div>
         </div>
-        <div className="ti">Turn: <span>{curPlayerName}</span></div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+          <div className="ti">Turn: <span>{curPlayerName}</span></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '.4rem' }}>
+            <div style={{ fontSize: '.58rem', fontFamily: 'var(--mono)', color: 'var(--tx3)' }}>
+              Round {game.roundNum || 1} · First to {room.target || 100}
+            </div>
+            {scoreHistory && scoreHistory.length > 0 && (
+              <button
+                onClick={() => setShowHistory(h => !h)}
+                style={{ background: showHistory ? 'var(--surf3)' : 'none', border: '1px solid var(--br)', borderRadius: 5, padding: '1px 6px', cursor: 'pointer', fontSize: '.58rem', fontFamily: 'var(--mono)', color: 'var(--tx2)' }}
+              >
+                {showHistory ? '✕' : 'history'}
+              </button>
+            )}
+          </div>
+        </div>
       </div>
+
+      {/* SCORE HISTORY DROPDOWN */}
+      {scoreHistory && scoreHistory.length > 0 && showHistory && (
+        <div style={{
+          position: 'absolute', top: 46, right: 0, zIndex: 50,
+          background: 'var(--surf)', border: '1px solid var(--br2)',
+          borderRadius: '0 0 0 10px', minWidth: 260,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+        }}>
+          <div style={{ padding: '.5rem .75rem', borderBottom: '1px solid var(--br)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '32px 1fr 1fr 70px', fontSize: '.6rem', fontFamily: 'var(--mono)', color: 'var(--tx3)', textTransform: 'uppercase' }}>
+              <span>#</span><span style={{ color: 'var(--t1)' }}>T1</span><span style={{ color: 'var(--t2)' }}>T2</span><span>Pts</span>
+            </div>
+          </div>
+          <div style={{ maxHeight: 200, overflowY: 'auto' }}>
+            {scoreHistory.map((row, i) => (
+              <div key={i} style={{ display: 'grid', gridTemplateColumns: '32px 1fr 1fr 70px', padding: '.3rem .75rem', fontSize: '.72rem', fontFamily: 'var(--mono)', borderBottom: i < scoreHistory.length - 1 ? '1px solid var(--br)' : 'none' }}>
+                <span style={{ color: 'var(--tx3)' }}>{row.round}</span>
+                <span style={{ color: row.winTeam === 1 ? 'var(--t1)' : 'var(--tx2)', fontWeight: row.winTeam === 1 ? 700 : 400 }}>{row.t1}</span>
+                <span style={{ color: row.winTeam === 2 ? 'var(--t2)' : 'var(--tx2)', fontWeight: row.winTeam === 2 ? 700 : 400 }}>{row.t2}</span>
+                <span style={{ color: 'var(--tx3)', fontSize: '.6rem' }}>{row.winTeam ? '+' + row.points + (row.capicu ? ' ⚡' : '') : row.blocked ? 'blocked' : 'tied'}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* CORNERS */}
       <div className="tcn" style={{ gridArea: 'tl', borderRight: '1px solid var(--br)' }} />
