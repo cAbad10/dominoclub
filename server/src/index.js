@@ -11,29 +11,51 @@ const {
 const app = express();
 const server = http.createServer(app);
 
-const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+// ── CORS ORIGIN CHECK ─────────────────────────────────────────────────────────
+// Accepts: localhost dev, any vercel.app preview, and the CLIENT_URL env var
+function isAllowedOrigin(origin) {
+  if (!origin) return true; // same-origin / server-to-server
+  if (origin.includes('localhost') || origin.includes('127.0.0.1')) return true;
+  if (origin.endsWith('.vercel.app')) return true;
+  const clientUrl = process.env.CLIENT_URL || '';
+  if (clientUrl && origin === clientUrl) return true;
+  return false;
+}
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (isAllowedOrigin(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`[CORS] Blocked origin: ${origin}`);
+      callback(new Error(`CORS blocked: ${origin}`));
+    }
+  },
+  methods: ['GET', 'POST', 'OPTIONS'],
+  credentials: true,
+};
 
 const io = new Server(server, {
-  cors: {
-    origin: [CLIENT_URL, 'http://localhost:5173', 'http://localhost:3000'],
-    methods: ['GET', 'POST'],
-    credentials: true,
-  },
+  cors: corsOptions,
+  transports: ['polling', 'websocket'],
 });
 
-app.use(cors({ origin: CLIENT_URL }));
+app.use(cors(corsOptions));
 app.use(express.json());
 
-// Health check endpoint
+// ── HEALTH CHECK ──────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// ─── SOCKET EVENTS ────────────────────────────────────────────────────────────
-io.on('connection', (socket) => {
-  console.log(`[+] Connected: ${socket.id}`);
+app.get('/', (req, res) => {
+  res.json({ service: 'Dominó server', status: 'running' });
+});
 
-  // ── CREATE ROOM ──────────────────────────────────────────────────────────
+// ── SOCKET EVENTS ─────────────────────────────────────────────────────────────
+io.on('connection', (socket) => {
+  console.log(`[+] Connected: ${socket.id} from ${socket.handshake.headers.origin || 'unknown'}`);
+
   socket.on('room:create', ({ name, mode, target }, callback) => {
     try {
       const room = createRoom({
@@ -44,7 +66,6 @@ io.on('connection', (socket) => {
       });
       socket.join(room.code);
       socket.data.roomCode = room.code;
-      socket.data.playerName = name;
       console.log(`[Room] Created ${room.code} by ${name}`);
       callback({ ok: true, room: sanitizeForPlayer(room, socket.id) });
     } catch (err) {
@@ -53,18 +74,13 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ── JOIN ROOM ────────────────────────────────────────────────────────────
   socket.on('room:join', ({ code, name }, callback) => {
     try {
-      const result = joinRoom({ code: code.toUpperCase(), socketId: socket.id, playerName: name || 'Player' });
+      const result = joinRoom({ code: code?.toUpperCase(), socketId: socket.id, playerName: name || 'Player' });
       if (result.error) return callback({ ok: false, error: result.error });
-
       socket.join(code.toUpperCase());
       socket.data.roomCode = code.toUpperCase();
-      socket.data.playerName = name;
-
-      // Notify others
-      socket.to(code).emit('lobby:updated', sanitizeForPlayer(result.room, null));
+      socket.to(code.toUpperCase()).emit('lobby:updated', sanitizeForPlayer(result.room, null));
       console.log(`[Room] ${name} joined ${code}`);
       callback({ ok: true, room: sanitizeForPlayer(result.room, socket.id) });
     } catch (err) {
@@ -73,7 +89,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ── SET READY ────────────────────────────────────────────────────────────
   socket.on('lobby:ready', ({ ready }, callback) => {
     const code = socket.data.roomCode;
     if (!code) return callback?.({ ok: false, error: 'Not in a room' });
@@ -83,7 +98,6 @@ io.on('connection', (socket) => {
     callback?.({ ok: true });
   });
 
-  // ── SET TEAM ─────────────────────────────────────────────────────────────
   socket.on('lobby:setTeam', ({ team }, callback) => {
     const code = socket.data.roomCode;
     if (!code) return callback?.({ ok: false, error: 'Not in a room' });
@@ -93,7 +107,6 @@ io.on('connection', (socket) => {
     callback?.({ ok: true });
   });
 
-  // ── CHAT ─────────────────────────────────────────────────────────────────
   socket.on('lobby:chat', ({ message }, callback) => {
     const code = socket.data.roomCode;
     if (!code) return;
@@ -103,138 +116,94 @@ io.on('connection', (socket) => {
     callback?.({ ok: true });
   });
 
-  // ── START GAME ───────────────────────────────────────────────────────────
   socket.on('game:start', (_, callback) => {
     const code = socket.data.roomCode;
     if (!code) return callback?.({ ok: false, error: 'Not in a room' });
     const result = startGame(code, socket.id);
     if (result.error) return callback?.({ ok: false, error: result.error });
-
-    // Send each player their own hand privately
     result.room.players.forEach(player => {
-      const playerSocket = io.sockets.sockets.get(player.id);
-      if (playerSocket) {
-        playerSocket.emit('game:started', sanitizeForPlayer(result.room, player.id));
-      }
+      const ps = io.sockets.sockets.get(player.id);
+      if (ps) ps.emit('game:started', sanitizeForPlayer(result.room, player.id));
     });
-
     console.log(`[Game] Started in room ${code}`);
     callback?.({ ok: true });
   });
 
-  // ── PLAY TILE ────────────────────────────────────────────────────────────
   socket.on('game:playTile', ({ tile, side }, callback) => {
     const code = socket.data.roomCode;
     if (!code) return callback?.({ ok: false, error: 'Not in a room' });
-
     const result = playTile({ code, socketId: socket.id, tile, side });
     if (result.error) return callback?.({ ok: false, error: result.error });
-
     if (result.roundOver) {
       const scoreResult = applyRoundScore(code, result.result);
       const room = getRoom(code);
-
-      if (scoreResult.gameWon) {
-        io.to(code).emit('game:over', {
-          scores: room.game.scores,
-          result: result.result,
-          capicu: result.capicu,
-        });
-      } else {
-        io.to(code).emit('game:roundOver', {
-          scores: room.game.scores,
-          result: result.result,
-          capicu: result.capicu,
-          blocked: result.blocked || false,
-        });
-      }
+      const event = scoreResult.gameWon ? 'game:over' : 'game:roundOver';
+      io.to(code).emit(event, {
+        scores: room.game.scores,
+        result: result.result,
+        capicu: result.capicu || false,
+        blocked: false,
+      });
     } else {
-      // Broadcast updated game state to all (no hands exposed)
       const room = getRoom(code);
       room.players.forEach(player => {
-        const playerSocket = io.sockets.sockets.get(player.id);
-        if (playerSocket) {
-          playerSocket.emit('game:stateUpdate', sanitizeForPlayer(room, player.id));
-        }
+        const ps = io.sockets.sockets.get(player.id);
+        if (ps) ps.emit('game:stateUpdate', sanitizeForPlayer(room, player.id));
       });
     }
-
     callback?.({ ok: true });
   });
 
-  // ── PASS TURN ────────────────────────────────────────────────────────────
   socket.on('game:pass', (_, callback) => {
     const code = socket.data.roomCode;
     if (!code) return callback?.({ ok: false, error: 'Not in a room' });
-
     const result = passTurn({ code, socketId: socket.id });
     if (result.error) return callback?.({ ok: false, error: result.error });
-
     if (result.roundOver) {
       const scoreResult = applyRoundScore(code, result.result);
       const room = getRoom(code);
-
-      if (scoreResult.gameWon) {
-        io.to(code).emit('game:over', {
-          scores: room.game.scores,
-          result: result.result,
-          blocked: true,
-        });
-      } else {
-        io.to(code).emit('game:roundOver', {
-          scores: room.game.scores,
-          result: result.result,
-          blocked: true,
-        });
-      }
+      const event = scoreResult.gameWon ? 'game:over' : 'game:roundOver';
+      io.to(code).emit(event, {
+        scores: room.game.scores,
+        result: result.result,
+        blocked: true,
+      });
     } else {
       const room = getRoom(code);
       room.players.forEach(player => {
-        const playerSocket = io.sockets.sockets.get(player.id);
-        if (playerSocket) {
-          playerSocket.emit('game:stateUpdate', sanitizeForPlayer(room, player.id));
-        }
+        const ps = io.sockets.sockets.get(player.id);
+        if (ps) ps.emit('game:stateUpdate', sanitizeForPlayer(room, player.id));
       });
     }
-
     callback?.({ ok: true });
   });
 
-  // ── NEXT ROUND ───────────────────────────────────────────────────────────
   socket.on('game:nextRound', (_, callback) => {
     const code = socket.data.roomCode;
     if (!code) return callback?.({ ok: false, error: 'Not in a room' });
-
     const room = getRoom(code);
     if (!room || room.hostId !== socket.id) return callback?.({ ok: false, error: 'Only host can advance round' });
-
     const result = startNextRound(code);
     if (result.error) return callback?.({ ok: false, error: result.error });
-
     result.room.players.forEach(player => {
-      const playerSocket = io.sockets.sockets.get(player.id);
-      if (playerSocket) {
-        playerSocket.emit('game:roundStarted', sanitizeForPlayer(result.room, player.id));
-      }
+      const ps = io.sockets.sockets.get(player.id);
+      if (ps) ps.emit('game:roundStarted', sanitizeForPlayer(result.room, player.id));
     });
-
     callback?.({ ok: true });
   });
 
-  // ── LEAVE ROOM ───────────────────────────────────────────────────────────
   socket.on('room:leave', (_, callback) => {
-    handleDisconnect(socket);
+    handleLeave(socket);
     callback?.({ ok: true });
   });
 
-  // ── DISCONNECT ───────────────────────────────────────────────────────────
   socket.on('disconnect', () => {
     console.log(`[-] Disconnected: ${socket.id}`);
-    handleDisconnect(socket);
+    handleLeave(socket);
   });
 });
 
-function handleDisconnect(socket) {
+function handleLeave(socket) {
   const result = playerDisconnect(socket.id);
   if (result) {
     socket.to(result.code).emit('player:left', {
@@ -242,13 +211,12 @@ function handleDisconnect(socket) {
       room: sanitizeForPlayer(result.room, null),
     });
     socket.leave(result.code);
-    console.log(`[Room] ${result.playerName} left ${result.code}`);
   }
 }
 
-// ─── START ────────────────────────────────────────────────────────────────────
+// ── START ─────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`\n🁣  Dominó server running on port ${PORT}`);
-  console.log(`   Client URL: ${CLIENT_URL}\n`);
+  console.log(`   Accepting origins: *.vercel.app + ${process.env.CLIENT_URL || 'localhost'}\n`);
 });
