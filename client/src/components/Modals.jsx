@@ -70,7 +70,7 @@ function ScoreHistory({ history }) {
 }
 
 // ── PLAYER HAND DISPLAY ───────────────────────────────────────────────────────
-function PlayerHand({ player, hand, isWinner }) {
+function PlayerHand({ player, hand, isWinner, showAlways = false }) {
   if (!player) return null
   const tc = player.team === 1 ? 'var(--t1)' : 'var(--t2)'
   const pipCount = (hand || []).reduce((s, t) => s + t[0] + t[1], 0)
@@ -95,13 +95,12 @@ function PlayerHand({ player, hand, isWinner }) {
           : <span style={{ fontSize: '.62rem', fontFamily: 'var(--mono)', color: 'var(--tx2)' }}>{pipCount} pips</span>
         }
       </div>
-      {!empty && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'flex-end' }}>
-          {(hand || []).map((tile, i) => (
-            <Domino key={i} tile={tile} size="mini" onBoard />
-          ))}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'flex-end', minHeight: empty ? 0 : 24 }}>
+          {empty
+            ? <span style={{ fontSize: '.62rem', color: 'var(--tx3)', fontFamily: 'var(--mono)' }}>No tiles remaining</span>
+            : (hand || []).map((tile, i) => <Domino key={i} tile={tile} size="mini" onBoard />)
+          }
         </div>
-      )}
     </div>
   )
 }
@@ -140,6 +139,7 @@ export function RoundModal({ scores, result, capicu, blocked, isHost, onNextRoun
                 player={p}
                 hand={hands[p.id] || []}
                 isWinner={result?.winTeam === p.team && (!hands[p.id] || hands[p.id].length === 0)}
+                showAlways
               />
             ))}
           </div>

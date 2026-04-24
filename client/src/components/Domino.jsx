@@ -1,10 +1,10 @@
 import React from 'react'
 
-// Precise pip positions for each value using a 3x3 grid (indices 0-8)
+// Precise pip positions for each value on a 3×3 grid (indices 0-8):
 // 0 1 2
 // 3 4 5
 // 6 7 8
-const PIP_POSITIONS = {
+const PIP_POS = {
   0: [],
   1: [4],
   2: [0, 8],
@@ -17,43 +17,33 @@ const PIP_POSITIONS = {
   9: [0, 1, 2, 3, 4, 5, 6, 7, 8],
 }
 
-function PipFace({ value, size }) {
-  // Each half is `size` wide and `size` tall
-  // Pip size scales with tile size
-  const pipSize = Math.max(3, Math.round(size * 0.18))
-  const padding = Math.round(size * 0.12)
-  const available = size - padding * 2
-  const cellSize = Math.round(available / 3)
-  const positions = PIP_POSITIONS[value] || []
-
-  if (value === 0) return <div style={{ width: size, height: size }} />
+// half = side length of each square half of the tile
+function PipFace({ value, half }) {
+  const pip = Math.max(3, Math.round(half * 0.17))
+  const pad = Math.round(half * 0.13)
+  const inner = half - pad * 2
+  const cell = inner / 3
+  const pos = PIP_POS[value] || []
 
   return (
     <div style={{
-      width: size,
-      height: size,
-      position: 'relative',
+      width: half, height: half,
       display: 'grid',
-      gridTemplateColumns: `repeat(3, ${cellSize}px)`,
-      gridTemplateRows: `repeat(3, ${cellSize}px)`,
-      padding: padding,
-      gap: 0,
+      gridTemplateColumns: `repeat(3, ${cell}px)`,
+      gridTemplateRows: `repeat(3, ${cell}px)`,
+      padding: pad,
     }}>
       {Array.from({ length: 9 }, (_, i) => (
         <div key={i} style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: cellSize,
-          height: cellSize,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          width: cell, height: cell,
         }}>
-          {positions.includes(i) && (
+          {pos.includes(i) && (
             <div style={{
-              width: pipSize,
-              height: pipSize,
+              width: pip, height: pip,
               borderRadius: '50%',
-              background: '#1a1714',
-              boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.4)',
+              background: 'var(--pip)',
+              boxShadow: 'inset 0 1px 1px rgba(0,0,0,0.35)',
             }} />
           )}
         </div>
@@ -69,7 +59,7 @@ export default function Domino({
   playable = false,
   disabled = false,
   onBoard = false,
-  horizontal = false,  // for board chain doubles
+  horizontal = false,  // doubles on the board render horizontally
   onClick,
   onDragStart,
   onDragEnd,
@@ -78,21 +68,17 @@ export default function Domino({
   if (!tile || !Array.isArray(tile)) return null
   const [a, b] = flipped ? [tile[1], tile[0]] : tile
 
-  // Tile dimensions
-  const halfSize = size === 'mini' ? 18 : size === 'small' ? 24 : 30
-  const W = horizontal ? halfSize * 2 + 2 : halfSize + 4  // +border
-  const H = horizontal ? halfSize + 4 : halfSize * 2 + 2
+  // Half size drives all dimensions
+  const half = size === 'mini' ? 18 : size === 'small' ? 24 : 30
 
-  // Colors — ivory bone with slight warmth
-  const boneColor = '#f4efe4'
-  const boneBorder = '#d4cbbf'
-  const dividerColor = '#c0b8aa'
+  // Vertical domino: half×half stacked = half wide, half*2 tall
+  // Horizontal (doubles on board): half*2 wide, half tall
+  const W = horizontal ? half * 2 + 3 : half + 4
+  const H = horizontal ? half + 4 : half * 2 + 3
 
   let shadow = 'none'
-  if (selected) shadow = '0 0 0 3px #d4a843, 0 8px 20px rgba(212,168,67,0.35)'
-  else if (playable) shadow = '0 0 0 2px #4caf7d, 0 2px 8px rgba(76,175,125,0.2)'
-
-  const isDouble = tile[0] === tile[1]
+  if (selected) shadow = '0 0 0 3px var(--gold), 0 6px 16px rgba(212,168,67,0.3)'
+  else if (playable) shadow = '0 0 0 2px var(--green), 0 2px 8px rgba(76,175,125,0.15)'
 
   return (
     <div
@@ -103,58 +89,37 @@ export default function Domino({
       style={{
         width: W,
         height: H,
-        background: boneColor,
-        border: `1.5px solid ${boneBorder}`,
+        background: 'var(--bone)',
+        border: `1.5px solid var(--bone2)`,
         borderRadius: 5,
         display: 'flex',
         flexDirection: horizontal ? 'row' : 'column',
         cursor: onBoard ? 'default' : disabled ? 'not-allowed' : 'grab',
         userSelect: 'none',
         flexShrink: 0,
-        opacity: disabled ? 0.38 : 1,
+        opacity: disabled ? 0.35 : 1,
         transform: selected ? 'translateY(-6px)' : 'none',
         transition: onBoard ? 'none' : 'transform 0.13s, box-shadow 0.13s',
         boxShadow: shadow,
         touchAction: 'none',
-        position: 'relative',
-        // Subtle inner bevel
-        backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 50%)',
+        backgroundImage: 'linear-gradient(145deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 55%)',
       }}
     >
       {/* First half */}
       <div style={{
-        flex: 1,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        [horizontal ? 'borderRight' : 'borderBottom']: `1.5px solid ${dividerColor}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        [horizontal ? 'borderRight' : 'borderBottom']: `1.5px solid var(--bdiv)`,
+        flexShrink: 0,
       }}>
-        <PipFace value={a} size={halfSize} />
+        <PipFace value={a} half={half} />
       </div>
-
-      {/* Center dot on doubles */}
-      {isDouble && onBoard && (
-        <div style={{
-          position: 'absolute',
-          [horizontal ? 'left' : 'top']: '50%',
-          [horizontal ? 'top' : 'left']: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: 5,
-          height: 5,
-          borderRadius: '50%',
-          background: dividerColor,
-          zIndex: 1,
-        }} />
-      )}
 
       {/* Second half */}
       <div style={{
-        flex: 1,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0,
       }}>
-        <PipFace value={b} size={halfSize} />
+        <PipFace value={b} half={half} />
       </div>
     </div>
   )
