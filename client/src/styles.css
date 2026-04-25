@@ -181,6 +181,7 @@ html, body, #root {
   display: flex;
   min-height: 0; /* CRITICAL — lets flex shrink properly */
   overflow: hidden;
+  position: relative;
 }
 
 .g-side {
@@ -213,51 +214,93 @@ html, body, #root {
 /* ── HAND TRAY ── */
 .g-hand {
   flex: 0 0 auto;
-  min-height: 120px;
-  background: var(--surf);
+  background: #12181f;
   border-top: 2px solid var(--br2);
   display: flex;
   flex-direction: column;
-  padding: .45rem .75rem .4rem;
-  gap: .35rem;
+  padding: .35rem .75rem .4rem;
+  gap: 0;
+  position: relative;
 }
 
-/* Top bar: player name + hint on left, action btns on right */
+/* Player name bar above tiles */
 .g-hand-bar {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
+  padding-bottom: .3rem;
   gap: .5rem;
 }
-.g-hand-info { display: flex; flex-direction: column; gap: 2px; }
+.g-hand-info { display: flex; flex-direction: column; gap: 1px; }
 .hlbl { font-size: .64rem; text-transform: uppercase; letter-spacing: .08em; font-family: var(--mono); color: var(--tx2); }
-.hhin { font-size: .6rem; color: var(--tx3); font-family: var(--mono); }
+.hhin { font-size: .58rem; color: var(--tx3); font-family: var(--mono); }
 
-/* Actions — pass / end choice centered below hand info */
-.g-actions {
+/* Floating action buttons — Paso style, centered ABOVE the hand tray */
+/* These sit at the bottom of the TABLE area, not inside the hand tray */
+.g-float-actions {
+  position: absolute;
+  top: -44px;        /* floats above the hand tray, over the table */
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: .4rem;
-  flex-wrap: wrap;
-  margin: 0 auto;
+  gap: .5rem;
+  z-index: 20;
+  pointer-events: none;
+}
+.g-float-actions > * {
+  pointer-events: all;
 }
 
-/* Full-width centered pass button when no other actions */
-.g-pass-center {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  padding: .1rem 0;
+/* Paso button style — matches Cuban game reference */
+.btn-paso {
+  background: #f0e8b0;
+  color: #2a2000;
+  border: 1.5px solid #c8b840;
+  border-radius: 8px;
+  padding: .35rem 1.8rem;
+  font-family: var(--font);
+  font-size: .85rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+  transition: all .15s;
+  white-space: nowrap;
+}
+.btn-paso:hover { background: #ffe44a; border-color: #a89020; }
+
+/* End choice buttons — also floating */
+.btn-end {
+  background: var(--surf2);
+  color: var(--tx);
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  padding: .35rem .9rem;
+  font-family: var(--font);
+  font-size: .8rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+  transition: all .15s;
+}
+.btn-end:hover { background: var(--surf3); }
+
+/* Tile tray — dark shelf look */
+.g-tile-tray {
+  background: #0d1018;
+  border-radius: 8px;
+  padding: .4rem .5rem .35rem;
+  border: 1px solid rgba(255,255,255,0.06);
 }
 
 /* Tile row */
 .g-tiles {
   display: flex;
-  gap: 5px;
-  align-items: flex-end;
+  gap: 6px;
+  align-items: center;
   overflow-x: auto;
-  min-height: 66px;
+  min-height: 70px;
   -webkit-overflow-scrolling: touch;
   padding-bottom: 2px;
   padding-top: 2px;

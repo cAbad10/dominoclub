@@ -11,14 +11,15 @@ function FeltCanvas() {
       const p = c.parentElement; if (!p) return
       c.width = p.offsetWidth; c.height = p.offsetHeight
       const ctx = c.getContext('2d'), W = c.width, H = c.height
+      // Wood-like felt background
       ctx.fillStyle = '#1b3d2a'; ctx.fillRect(0, 0, W, H)
-      ctx.strokeStyle = 'rgba(255,255,255,0.025)'; ctx.lineWidth = 1
+      ctx.strokeStyle = 'rgba(255,255,255,0.022)'; ctx.lineWidth = 1
       for (let x = 0; x < W; x += 32) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke() }
       for (let y = 0; y < H; y += 32) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke() }
       ctx.strokeStyle = 'rgba(255,255,255,0.05)'; ctx.lineWidth = 2
-      ctx.beginPath(); ctx.ellipse(W/2, H/2, W*.38, H*.4, 0, 0, Math.PI*2); ctx.stroke()
-      ;[[18,18],[W-18,18],[18,H-18],[W-18,H-18]].forEach(([cx,cy]) => {
-        ctx.strokeStyle='rgba(255,255,255,0.07)'; ctx.lineWidth=1.5
+      ctx.beginPath(); ctx.ellipse(W/2,H/2,W*.38,H*.4,0,0,Math.PI*2); ctx.stroke()
+      ;[[18,18],[W-18,18],[18,H-18],[W-18,H-18]].forEach(([cx,cy])=>{
+        ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.lineWidth=1.5
         ctx.beginPath(); ctx.arc(cx,cy,9,0,Math.PI*2); ctx.stroke()
         ctx.beginPath(); ctx.arc(cx,cy,3,0,Math.PI*2); ctx.stroke()
       })
@@ -28,50 +29,46 @@ function FeltCanvas() {
     if (ref.current?.parentElement) ro.observe(ref.current.parentElement)
     return () => ro.disconnect()
   }, [])
-  return <canvas ref={ref} style={{ position:'absolute', inset:0, width:'100%', height:'100%' }} />
+  return <canvas ref={ref} style={{position:'absolute',inset:0,width:'100%',height:'100%'}} />
 }
 
-// ── NAMEPLATE (compact horizontal) ───────────────────────────────────────────
-function OppCard({ player, isActive, handCount }) {
+// ── OPPONENT CARD ─────────────────────────────────────────────────────────────
+function OppCard({ player, isActive, handCount, vertical=false }) {
   if (!player) return null
-  const tc = player.team === 1 ? 'var(--t1)' : 'var(--t2)'
-  const count = handCount || 0
-  const danger = count === 1
-  const show = Math.min(count, 8)
-  return (
-    <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, minWidth:50 }}>
-      <div style={{ display:'flex', alignItems:'center', gap:4 }}>
-        <div style={{ width:6, height:6, borderRadius:'50%', background: isActive?'var(--green)':'var(--surf3)', boxShadow: isActive?'0 0 5px var(--green)':'none', flexShrink:0 }} />
-        <div style={{ fontSize:'.62rem', fontWeight:700, fontFamily:'var(--mono)', color:tc, whiteSpace:'nowrap' }}>{player.name}</div>
-        <div style={{ fontSize:'.52rem', color:'var(--tx3)', fontFamily:'var(--mono)' }}>({count})</div>
-      </div>
-      <div style={{ display:'flex', gap:2, flexWrap:'wrap', justifyContent:'center' }}>
-        {Array.from({length:show}).map((_,i)=>(
-          <div key={i} style={{ width:16, height:10, borderRadius:2, background:danger?'#5a1a1a':'var(--surf3)', border:`1px solid ${danger?'var(--red)':'var(--br2)'}` }} />
-        ))}
-        {count>show && <div style={{ fontSize:'.48rem', color:'var(--tx3)', fontFamily:'var(--mono)' }}>+{count-show}</div>}
-      </div>
-    </div>
-  )
-}
-
-// ── NAMEPLATE (vertical for side panels) ─────────────────────────────────────
-function SideCard({ player, isActive, handCount }) {
-  if (!player) return <div style={{ fontSize:'.5rem', color:'var(--tx3)', fontFamily:'var(--mono)' }}>—</div>
-  const tc = player.team===1?'var(--t1)':'var(--t2)'
+  const tc = player.team===1 ? 'var(--t1)' : 'var(--t2)'
   const count = handCount||0
   const danger = count===1
-  const show = Math.min(count, 6)
+  const show = Math.min(count, vertical?6:9)
+
+  if (vertical) {
+    return (
+      <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,padding:'4px 2px'}}>
+        <div style={{width:7,height:7,borderRadius:'50%',background:isActive?'var(--green)':'var(--surf3)',boxShadow:isActive?'0 0 6px var(--green)':'none'}}/>
+        <div style={{fontSize:'.6rem',fontWeight:700,fontFamily:'var(--mono)',color:tc,writingMode:'vertical-rl',textOrientation:'mixed',maxHeight:60,overflow:'hidden',whiteSpace:'nowrap'}}>
+          {player.name}
+        </div>
+        <div style={{display:'flex',flexDirection:'column',gap:2,alignItems:'center'}}>
+          {Array.from({length:show}).map((_,i)=>(
+            <div key={i} style={{width:9,height:15,borderRadius:2,background:danger?'#5a1a1a':'var(--surf3)',border:`1px solid ${danger?'var(--red)':'var(--br2)'}`}}/>
+          ))}
+          {count>show && <div style={{fontSize:'.46rem',color:'var(--tx3)',fontFamily:'var(--mono)'}}>+{count-show}</div>}
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
-      <div style={{ width:7, height:7, borderRadius:'50%', background:isActive?'var(--green)':'var(--surf3)', boxShadow:isActive?'0 0 6px var(--green)':'none' }} />
-      <div style={{ fontSize:'.6rem', fontWeight:700, fontFamily:'var(--mono)', color:tc, writing:'vertical-lr', textAlign:'center', maxWidth:56, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{player.name}</div>
-      <div style={{ fontSize:'.5rem', color:'var(--tx3)', fontFamily:'var(--mono)' }}>T{player.team}·{count}</div>
-      <div style={{ display:'flex', flexDirection:'column', gap:2, alignItems:'center' }}>
+    <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,padding:'4px 8px'}}>
+      <div style={{display:'flex',alignItems:'center',gap:5}}>
+        <div style={{width:7,height:7,borderRadius:'50%',background:isActive?'var(--green)':'var(--surf3)',boxShadow:isActive?'0 0 6px var(--green)':'none',flexShrink:0}}/>
+        <div style={{fontSize:'.7rem',fontWeight:700,fontFamily:'var(--mono)',color:tc,whiteSpace:'nowrap'}}>{player.name}</div>
+        <div style={{fontSize:'.6rem',fontFamily:'var(--mono)',color:tc,opacity:.6}}>T{player.team}</div>
+      </div>
+      <div style={{display:'flex',gap:2,justifyContent:'center'}}>
         {Array.from({length:show}).map((_,i)=>(
-          <div key={i} style={{ width:9, height:14, borderRadius:2, background:danger?'#5a1a1a':'var(--surf3)', border:`1px solid ${danger?'var(--red)':'var(--br2)'}` }} />
+          <div key={i} style={{width:15,height:9,borderRadius:2,background:danger?'#5a1a1a':'var(--surf3)',border:`1px solid ${danger?'var(--red)':'var(--br2)'}`}}/>
         ))}
-        {count>show && <div style={{ fontSize:'.45rem', color:'var(--tx3)', fontFamily:'var(--mono)' }}>+{count-show}</div>}
+        {count>show && <div style={{fontSize:'.48rem',color:'var(--tx3)',fontFamily:'var(--mono)'}}>+{count-show}</div>}
       </div>
     </div>
   )
@@ -90,18 +87,18 @@ function FirstTileZone({ active, onDrop, onClick }) {
       }}
       onClick={()=>{if(active)onClick()}}
       style={{
-        width:80, height:120,
+        width:70,height:110,
         border:`2px dashed ${over?'var(--gold)':active?'var(--green)':'rgba(255,255,255,0.1)'}`,
-        borderRadius:12,
-        display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8,
+        borderRadius:10,
+        display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:8,
         cursor:active?'pointer':'default',
         background:over?'rgba(212,168,67,0.1)':active?'rgba(76,175,125,0.06)':'transparent',
         animation:active&&!over?'dp 1.2s infinite':'none',
         transition:'all .15s',
       }}
     >
-      <div style={{ fontSize:'1.4rem', opacity:active?.7:.2 }}>🁣</div>
-      <div style={{ fontSize:'.6rem', fontFamily:'var(--mono)', color:active?'var(--green)':'rgba(255,255,255,.18)', textAlign:'center', lineHeight:1.5 }}>
+      <div style={{fontSize:'1.3rem',opacity:active?.7:.2}}>🁣</div>
+      <div style={{fontSize:'.58rem',fontFamily:'var(--mono)',color:active?'var(--green)':'rgba(255,255,255,.18)',textAlign:'center',lineHeight:1.5,whiteSpace:'pre-line'}}>
         {active?'Drop first\ntile here':'Waiting...'}
       </div>
     </div>
@@ -121,64 +118,116 @@ function EndZone({ side, value, active, onDrop, onClick }) {
       }}
       onClick={()=>{if(active)onClick(side)}}
       style={{
-        display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+        display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
         border:`2px dashed ${over?'var(--gold)':active?'var(--green)':'rgba(255,255,255,0.1)'}`,
-        borderRadius:8, width:38, minHeight:62, padding:'4px 2px',
+        borderRadius:8,width:36,minHeight:60,padding:'4px 2px',
         background:over?'rgba(212,168,67,0.1)':active?'rgba(76,175,125,0.05)':'transparent',
         animation:active&&!over?'dp 1.2s infinite':'none',
-        transition:'all .15s', cursor:active?'pointer':'default',
-        flexShrink:0, gap:2,
+        transition:'all .15s',cursor:active?'pointer':'default',
+        flexShrink:0,gap:3,
       }}
     >
-      <div style={{ fontSize:'.55rem', color:over?'var(--gold)':active?'var(--green)':'rgba(255,255,255,.2)', fontFamily:'var(--mono)' }}>
+      <div style={{fontSize:'.6rem',color:over?'var(--gold)':active?'var(--green)':'rgba(255,255,255,.2)',fontFamily:'var(--mono)'}}>
         {side==='left'?'←':'→'}
       </div>
-      <div style={{ fontSize:'.65rem', fontWeight:700, color:over?'var(--gold)':'rgba(255,255,255,.3)', fontFamily:'var(--mono)' }}>
+      <div style={{fontSize:'.7rem',fontWeight:700,color:over?'var(--gold)':'rgba(255,255,255,.35)',fontFamily:'var(--mono)'}}>
         {value??'?'}
       </div>
     </div>
   )
 }
 
-// ── CUBAN CHAIN ───────────────────────────────────────────────────────────────
-// Regular tiles: vertical (narrow). Doubles: horizontal (perpendicular to chain).
-// Snakes right → down → left → down → right...
-function CubanChain({ chain }) {
-  if (!chain.length) return null
+// ─────────────────────────────────────────────────────────────────────────────
+// CUBAN CHAIN LAYOUT
+//
+// From the reference image:
+//   • Regular tiles: VERTICAL (portrait) — narrow side horizontal, tall side vertical
+//     → width = TW (narrow), height = TH (tall)
+//   • Doubles: HORIZONTAL (landscape) — wider than tall, perpendicular to the chain
+//     → width = DW (wide), height = DH (short) — centered on the chain's vertical midline
+//
+// Chain direction pattern (like the reference image):
+//   1. Start in the middle, go RIGHT
+//   2. When MAX_ROW tiles placed → last tile of that row acts as CORNER, chain turns DOWN one row
+//   3. Continue going LEFT
+//   4. When MAX_ROW tiles placed → turn DOWN again, go RIGHT
+//   → Forms a snake / U shape
+//
+// The corner turn is achieved by the chain algorithm shifting Y and flipping direction.
+// No special "corner tile" — just a tight gap makes the turn visually clear.
+// ─────────────────────────────────────────────────────────────────────────────
 
-  // Tile dimensions
-  const TW = 34, TH = 66   // vertical tile
-  const DW = 66, DH = 34   // horizontal double
-  const GAP = 4
-  const MAX_ROW = 7
+// Tile dimensions (pixels)
+const TW = 32   // regular tile width  (vertical portrait)
+const TH = 62   // regular tile height (vertical portrait)
+const DW = 62   // double tile width   (horizontal landscape)
+const DH = 32   // double tile height  (horizontal landscape)
+const GAP = 3   // gap between tiles
+
+function buildChainLayout(chain) {
+  if (!chain.length) return []
+
+  const MAX_ROW = 8   // tiles per row before snaking
+  const ROW_GAP = 10  // extra vertical gap between rows
 
   const items = []
-  let cx = 0, cy = 0, dir = 1, rowCount = 0
+  let cx = 0
+  let cy = 0
+  let dir = 1        // 1=right, -1=left
+  let rowCount = 0
 
   chain.forEach((entry, i) => {
     const isDbl = entry.tile[0] === entry.tile[1]
     const w = isDbl ? DW : TW
     const h = isDbl ? DH : TH
+
+    // Center all tiles vertically within the row (row height = TH)
     const yOff = isDbl ? (TH - DH) / 2 : 0
-    items.push({ entry, x: cx, y: cy + yOff, w, h, isDbl })
+
+    items.push({
+      entry,
+      x: cx,
+      y: cy + yOff,
+      w, h, isDbl,
+    })
+
     rowCount++
+
     if (rowCount >= MAX_ROW && i < chain.length - 1) {
-      cy += TH + GAP * 2; dir *= -1; rowCount = 0
+      // Turn: drop down to next row, flip direction
+      cy += TH + ROW_GAP
+      dir *= -1
+      rowCount = 0
+      // After turning, don't advance x — next tile starts at same x as last
     } else {
       cx += dir * (w + GAP)
     }
   })
 
+  // Normalize so minimum x = 0
   const minX = Math.min(...items.map(it => it.x))
   items.forEach(it => { it.x -= minX })
+
+  return items
+}
+
+function CubanChain({ chain }) {
+  if (!chain.length) return null
+
+  const items = buildChainLayout(chain)
   const totalW = Math.max(...items.map(it => it.x + it.w))
   const totalH = Math.max(...items.map(it => it.y + it.h))
 
   return (
-    <div style={{ position:'relative', width:totalW, height:totalH, flexShrink:0 }}>
-      {items.map(({ entry, x, y, isDbl }, i) => (
-        <div key={i} style={{ position:'absolute', left:x, top:y }}>
-          <Domino tile={entry.tile} flipped={entry.flipped||false} horizontal={isDbl} onBoard />
+    <div style={{position:'relative', width:totalW, height:totalH, flexShrink:0}}>
+      {items.map(({entry, x, y, isDbl}, i) => (
+        <div key={i} style={{position:'absolute', left:x, top:y}}>
+          <Domino
+            tile={entry.tile}
+            flipped={entry.flipped || false}
+            horizontal={isDbl}   // doubles rendered wide/flat, regular tiles tall/vertical
+            onBoard
+          />
         </div>
       ))}
     </div>
@@ -189,13 +238,13 @@ function CubanChain({ chain }) {
 export default function GameScreen({ room, myId, myHand, onPlayTile, onPass, onLeave, scoreHistory }) {
   const [selectedIdx, setSelectedIdx] = useState(null)
   const [ghostTile, setGhostTile] = useState(null)
-  const [ghostPos, setGhostPos] = useState({ x:0, y:0 })
+  const [ghostPos, setGhostPos] = useState({x:0,y:0})
   const [showHistory, setShowHistory] = useState(false)
 
   if (!room?.game || !room?.players || !myId) {
     return (
-      <div style={{ position:'fixed', inset:0, display:'flex', alignItems:'center', justifyContent:'center', background:'var(--bg)' }}>
-        <div style={{ color:'var(--tx2)', fontFamily:'var(--mono)', fontSize:'.85rem' }}>Loading...</div>
+      <div style={{position:'fixed',inset:0,display:'flex',alignItems:'center',justifyContent:'center',background:'var(--bg)'}}>
+        <div style={{color:'var(--tx2)',fontFamily:'var(--mono)',fontSize:'.85rem'}}>Loading...</div>
       </div>
     )
   }
@@ -203,18 +252,17 @@ export default function GameScreen({ room, myId, myHand, onPlayTile, onPass, onL
   const game = room.game
   const players = room.players || []
   const chain = game.chain || []
-  const scores = game.scores || { t1:0, t2:0 }
+  const scores = game.scores || {t1:0,t2:0}
   const handCounts = game.handCounts || {}
   const myHandSafe = Array.isArray(myHand) ? myHand : []
-  const myPlayer = players.find(p => p.id === myId)
+  const myPlayer = players.find(p=>p.id===myId)
   const isMyTurn = game.currentPlayerId === myId
-  const { L, R } = getChainEnds(chain)
-  const hasPlayable = myHandSafe.some(t => canPlayTile(t, chain))
+  const {L, R} = getChainEnds(chain)
+  const hasPlayable = myHandSafe.some(t=>canPlayTile(t,chain))
   const isFirst = chain.length === 0
 
-  // Seat rotation: me=bottom, +1=left, +2=top, +3=right
-  const myIdx = players.findIndex(p => p.id === myId)
-  const getP = off => players.length > 0 ? players[(myIdx+off)%players.length]||null : null
+  const myIdx = players.findIndex(p=>p.id===myId)
+  const getP = off => players.length>0 ? players[(myIdx+off)%players.length]||null : null
   const leftP=getP(1), topP=getP(2), rightP=getP(3)
 
   const canL = !isFirst && isMyTurn && myHandSafe.some(t=>canPlayTile(t,chain)&&tileMatchesEnd(t,L))
@@ -222,6 +270,7 @@ export default function GameScreen({ room, myId, myHand, onPlayTile, onPass, onL
   const showEndBtns = isMyTurn && selectedIdx!==null && !isFirst
   const curName = players.find(p=>p.id===game.currentPlayerId)?.name||'—'
   const lastRound = scoreHistory?.length ? scoreHistory[scoreHistory.length-1] : null
+  const isNeedPass = isMyTurn && !hasPlayable && !isFirst
 
   useEffect(()=>{
     const move = e=>{if(ghostTile) setGhostPos({x:e.clientX,y:e.clientY})}
@@ -230,22 +279,25 @@ export default function GameScreen({ room, myId, myHand, onPlayTile, onPass, onL
   },[ghostTile])
 
   function handleTileClick(idx) {
-    if(!isMyTurn) return
+    if (!isMyTurn) return
     const tile = myHandSafe[idx]; if(!tile) return
-    if(isFirst) { onPlayTile(tile,'left'); setSelectedIdx(null); return }
-    if(!canPlayTile(tile,chain)) return
+    if (isFirst) { onPlayTile(tile,'left'); setSelectedIdx(null); return }
+    if (!canPlayTile(tile,chain)) return
     setSelectedIdx(idx)
     const fL=tileMatchesEnd(tile,L), fR=tileMatchesEnd(tile,R)
-    if(fL&&!fR){onPlayTile(tile,'left');setSelectedIdx(null)}
-    else if(!fL&&fR){onPlayTile(tile,'right');setSelectedIdx(null)}
+    if (fL&&!fR) { onPlayTile(tile,'left'); setSelectedIdx(null) }
+    else if (!fL&&fR) { onPlayTile(tile,'right'); setSelectedIdx(null) }
+    // else needs end choice — buttons appear
   }
 
   function handleEndChoice(side) {
-    if(selectedIdx===null||!myHandSafe[selectedIdx]) return
+    if (selectedIdx===null||!myHandSafe[selectedIdx]) return
     onPlayTile(myHandSafe[selectedIdx],side); setSelectedIdx(null)
   }
 
-  function handleDrop(tile,side) { setGhostTile(null); onPlayTile(tile,side); setSelectedIdx(null) }
+  function handleDrop(tile,side) {
+    setGhostTile(null); onPlayTile(tile,side); setSelectedIdx(null)
+  }
 
   function startDrag(tile,idx,e) {
     e.dataTransfer.setData('text/plain',JSON.stringify({tile,idx}))
@@ -256,23 +308,23 @@ export default function GameScreen({ room, myId, myHand, onPlayTile, onPass, onL
   }
 
   const hint = isMyTurn
-    ? isFirst ? 'Drag or tap a tile to play first' : hasPlayable ? 'Drag to ← or → · or tap tile' : ''
-    : `${curName}'s turn`
-
-  const isNeedPass = isMyTurn && !hasPlayable && !isFirst
+    ? isFirst
+      ? 'Play the opening tile — drag or tap'
+      : hasPlayable
+        ? selectedIdx!==null ? 'Choose ← Left or Right →' : 'Drag to ← or → · or tap a tile'
+        : ''
+    : `Waiting for ${curName}...`
 
   return (
     <div className="game-wrap">
 
       {/* ── HEADER ── */}
       <div className="g-hdr">
-        {/* Left */}
-        <div className="g-hdr-left">
-          <button className="btn bs bsm" onClick={onLeave} style={{padding:'.25rem .55rem',fontSize:'.7rem'}}>←</button>
+        <div style={{flexShrink:0}}>
+          <button className="btn bs bsm" onClick={onLeave} style={{padding:'.25rem .6rem',fontSize:'.7rem'}}>←</button>
         </div>
 
-        {/* Center scores */}
-        <div className="g-hdr-center">
+        <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:1}}>
           <div className="g-score-row">
             <div className="g-team">
               <div className="g-team-label tc1">Team 1</div>
@@ -286,16 +338,15 @@ export default function GameScreen({ room, myId, myHand, onPlayTile, onPass, onL
           </div>
           <div className="g-rnd">
             {lastRound
-              ? <>Rnd {lastRound.round}: <em>+{lastRound.points}pts</em> T{lastRound.winTeam}{lastRound.capicu?' ⚡':''} · {game.roundNum||1} now</>
+              ? <><em>Rnd {lastRound.round}: +{lastRound.points}pts T{lastRound.winTeam}{lastRound.capicu?' ⚡':''}</em> · Rnd {game.roundNum||1}</>
               : <>Rnd {game.roundNum||1} · First to {room.target||100}</>
             }
           </div>
         </div>
 
-        {/* Right */}
-        <div className="g-hdr-right">
+        <div style={{flexShrink:0,display:'flex',flexDirection:'column',alignItems:'flex-end',gap:2}}>
           <div className="g-turn">Turn: <strong>{curName}</strong></div>
-          {scoreHistory?.length > 0 && (
+          {scoreHistory?.length>0 && (
             <button
               onClick={()=>setShowHistory(h=>!h)}
               style={{background:showHistory?'var(--surf3)':'none',border:'1px solid var(--br)',borderRadius:5,padding:'1px 5px',cursor:'pointer',fontSize:'.52rem',fontFamily:'var(--mono)',color:'var(--tx2)'}}
@@ -306,16 +357,16 @@ export default function GameScreen({ room, myId, myHand, onPlayTile, onPass, onL
         </div>
       </div>
 
-      {/* ── HISTORY DROPDOWN ── */}
-      {showHistory && scoreHistory?.length > 0 && (
+      {/* History dropdown */}
+      {showHistory && scoreHistory?.length>0 && (
         <div style={{position:'absolute',top:52,right:0,zIndex:50,background:'var(--surf)',border:'1px solid var(--br2)',borderRadius:'0 0 0 10px',minWidth:220,boxShadow:'0 4px 20px rgba(0,0,0,.5)'}}>
           <div style={{padding:'.35rem .6rem',borderBottom:'1px solid var(--br)'}}>
-            <div style={{display:'grid',gridTemplateColumns:'26px 1fr 1fr 52px',fontSize:'.56rem',fontFamily:'var(--mono)',color:'var(--tx3)',textTransform:'uppercase'}}>
+            <div style={{display:'grid',gridTemplateColumns:'26px 1fr 1fr 56px',fontSize:'.56rem',fontFamily:'var(--mono)',color:'var(--tx3)',textTransform:'uppercase'}}>
               <span>#</span><span style={{color:'var(--t1)'}}>T1</span><span style={{color:'var(--t2)'}}>T2</span><span>+pts</span>
             </div>
           </div>
           {scoreHistory.map((r,i)=>(
-            <div key={i} style={{display:'grid',gridTemplateColumns:'26px 1fr 1fr 52px',padding:'.26rem .6rem',fontSize:'.68rem',fontFamily:'var(--mono)',borderBottom:i<scoreHistory.length-1?'1px solid var(--br)':'none',background:i===scoreHistory.length-1?'rgba(255,255,255,.03)':'transparent'}}>
+            <div key={i} style={{display:'grid',gridTemplateColumns:'26px 1fr 1fr 56px',padding:'.26rem .6rem',fontSize:'.68rem',fontFamily:'var(--mono)',borderBottom:i<scoreHistory.length-1?'1px solid var(--br)':'none'}}>
               <span style={{color:'var(--tx3)'}}>{r.round}</span>
               <span style={{color:r.winTeam===1?'var(--t1)':'var(--tx2)',fontWeight:r.winTeam===1?700:400}}>{r.t1}</span>
               <span style={{color:r.winTeam===2?'var(--t2)':'var(--tx2)',fontWeight:r.winTeam===2?700:400}}>{r.t2}</span>
@@ -325,52 +376,68 @@ export default function GameScreen({ room, myId, myHand, onPlayTile, onPass, onL
         </div>
       )}
 
-      {/* ── OPPONENTS TOP STRIP ── */}
+      {/* ── OPPONENT ACROSS (top strip) — only the player directly across ── */}
       <div className="g-opps">
-        {/* On mobile show all 3 opponents here */}
-        {leftP && <OppCard player={leftP} isActive={leftP.id===game.currentPlayerId} handCount={handCounts[leftP.id]??0} />}
-        <OppCard player={topP} isActive={topP?.id===game.currentPlayerId} handCount={handCounts[topP?.id]??0} />
-        {rightP && <OppCard player={rightP} isActive={rightP.id===game.currentPlayerId} handCount={handCounts[rightP.id]??0} />}
+        <OppCard player={topP} isActive={topP?.id===game.currentPlayerId} handCount={handCounts[topP?.id]??0} vertical={false}/>
       </div>
 
       {/* ── MIDDLE ROW ── */}
       <div className="g-mid">
 
-        {/* Left side panel — desktop only */}
+        {/* Left player */}
         <div className="g-side g-side-l">
-          <SideCard player={leftP} isActive={leftP?.id===game.currentPlayerId} handCount={handCounts[leftP?.id]??0} />
+          <OppCard player={leftP} isActive={leftP?.id===game.currentPlayerId} handCount={handCounts[leftP?.id]??0} vertical/>
         </div>
 
-        {/* Felt Table */}
+        {/* Table */}
         <div className="g-table">
-          <FeltCanvas />
+          <FeltCanvas/>
           <div style={{position:'absolute',inset:0,overflow:'auto',display:'flex',alignItems:'center',justifyContent:'center',padding:'1rem'}}>
             {isFirst ? (
               <FirstTileZone
                 active={isMyTurn}
-                onDrop={(tile)=>handleDrop(tile,'left')}
-                onClick={()=>{if(selectedIdx!==null&&myHandSafe[selectedIdx]){onPlayTile(myHandSafe[selectedIdx],'left');setSelectedIdx(null)}}}
+                onDrop={tile=>handleDrop(tile,'left')}
+                onClick={()=>{
+                  if(selectedIdx!==null&&myHandSafe[selectedIdx]) {
+                    onPlayTile(myHandSafe[selectedIdx],'left'); setSelectedIdx(null)
+                  }
+                }}
               />
             ) : (
               <div style={{display:'flex',alignItems:'center',gap:4}}>
-                <EndZone side="left" value={L} active={canL} onDrop={handleDrop} onClick={handleEndChoice} />
-                <CubanChain chain={chain} />
-                <EndZone side="right" value={R} active={canR} onDrop={handleDrop} onClick={handleEndChoice} />
+                <EndZone side="left" value={L} active={canL} onDrop={handleDrop} onClick={handleEndChoice}/>
+                <CubanChain chain={chain}/>
+                <EndZone side="right" value={R} active={canR} onDrop={handleDrop} onClick={handleEndChoice}/>
               </div>
             )}
           </div>
         </div>
 
-        {/* Right side panel — desktop only */}
+        {/* Right player */}
         <div className="g-side g-side-r">
-          <SideCard player={rightP} isActive={rightP?.id===game.currentPlayerId} handCount={handCounts[rightP?.id]??0} />
+          <OppCard player={rightP} isActive={rightP?.id===game.currentPlayerId} handCount={handCounts[rightP?.id]??0} vertical/>
         </div>
       </div>
 
       {/* ── HAND TRAY ── */}
       <div className="g-hand">
 
-        {/* Top info bar */}
+        {/* Floating actions — Paso button sits above the hand, over the table */}
+        {(isNeedPass || showEndBtns) && (
+          <div className="g-float-actions">
+            {isNeedPass && (
+              <button className="btn-paso" onClick={onPass}>Paso</button>
+            )}
+            {showEndBtns && (
+              <>
+                <button className="btn-end" onClick={()=>handleEndChoice('left')}>← Left</button>
+                <button className="btn-end" onClick={()=>handleEndChoice('right')}>Right →</button>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Player name bar */}
         <div className="g-hand-bar">
           <div className="g-hand-info">
             <div style={{display:'flex',alignItems:'center',gap:'.4rem'}}>
@@ -378,59 +445,39 @@ export default function GameScreen({ room, myId, myHand, onPlayTile, onPass, onL
               <span className={`tag ${myPlayer?.team===1?'tc1':'tc2'}`} style={{fontSize:'.54rem',padding:'1px 5px'}}>
                 T{myPlayer?.team||1}
               </span>
-              <span style={{fontSize:'.58rem',fontFamily:'var(--mono)',color:'var(--tx3)'}}>({myHandSafe.length})</span>
             </div>
             <div className="hhin">{hint}</div>
           </div>
-
-          {/* End choice buttons — only show when tile is selected and needs end pick */}
-          {showEndBtns && (
-            <div style={{display:'flex',gap:'.35rem',alignItems:'center'}}>
-              <button className="btn bs bsm" onClick={()=>handleEndChoice('left')}>← Left</button>
-              <button className="btn bs bsm" onClick={()=>handleEndChoice('right')}>Right →</button>
-            </div>
-          )}
         </div>
 
-        {/* PASS BUTTON — centered, full width feel */}
-        {isNeedPass && (
-          <div className="g-pass-center">
-            <button
-              className="btn bs"
-              onClick={onPass}
-              style={{maxWidth:200,fontSize:'.85rem',padding:'.45rem 2rem',borderColor:'var(--gold)',color:'var(--gold)'}}
-            >
-              Pass Turn
-            </button>
+        {/* Dark tile shelf */}
+        <div className="g-tile-tray">
+          <div className="g-tiles">
+            {myHandSafe.map((tile,idx)=>{
+              if(!tile||!Array.isArray(tile)) return null
+              const playable = isMyTurn&&(isFirst||canPlayTile(tile,chain))
+              const sel = selectedIdx===idx
+              return (
+                <Domino
+                  key={`${tile[0]}-${tile[1]}-${idx}`}
+                  tile={tile}
+                  selected={sel}
+                  playable={playable&&!sel}
+                  disabled={!isMyTurn||(!isFirst&&!canPlayTile(tile,chain))}
+                  onClick={()=>handleTileClick(idx)}
+                  onDragStart={playable?e=>startDrag(tile,idx,e):null}
+                  onDragEnd={()=>setGhostTile(null)}
+                />
+              )
+            })}
           </div>
-        )}
-
-        {/* Tile rack */}
-        <div className="g-tiles">
-          {myHandSafe.map((tile,idx)=>{
-            if(!tile||!Array.isArray(tile)) return null
-            const playable = isMyTurn&&(isFirst||canPlayTile(tile,chain))
-            const sel = selectedIdx===idx
-            return (
-              <Domino
-                key={`${tile[0]}-${tile[1]}-${idx}`}
-                tile={tile}
-                selected={sel}
-                playable={playable&&!sel}
-                disabled={!isMyTurn||(!isFirst&&!canPlayTile(tile,chain))}
-                onClick={()=>handleTileClick(idx)}
-                onDragStart={playable?e=>startDrag(tile,idx,e):null}
-                onDragEnd={()=>setGhostTile(null)}
-              />
-            )
-          })}
         </div>
       </div>
 
       {/* Drag ghost */}
       {ghostTile && (
-        <div style={{position:'fixed',left:ghostPos.x,top:ghostPos.y,transform:'translate(-50%,-50%) scale(1.1)',pointerEvents:'none',zIndex:9999,opacity:.88}}>
-          <Domino tile={ghostTile} />
+        <div style={{position:'fixed',left:ghostPos.x,top:ghostPos.y,transform:'translate(-50%,-50%) scale(1.1)',pointerEvents:'none',zIndex:9999,opacity:.9}}>
+          <Domino tile={ghostTile}/>
         </div>
       )}
     </div>
