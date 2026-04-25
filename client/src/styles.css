@@ -121,7 +121,7 @@ html, body, #root {
 
 /* ── HEADER ── */
 .g-hdr {
-  flex: 0 0 52px;
+  flex: 0 0 60px;
   display: flex;
   align-items: center;
   padding: 0 .75rem;
@@ -145,19 +145,52 @@ html, body, #root {
   gap: 1px;
   overflow: hidden;
 }
-.g-score-row { display: flex; align-items: center; gap: .5rem; }
-.g-team { display: flex; flex-direction: column; align-items: center; min-width: 44px; }
-.g-team-label { font-size: .52rem; text-transform: uppercase; letter-spacing: .08em; font-family: var(--mono); white-space: nowrap; }
-.g-team-score { font-size: clamp(1rem, 4vw, 1.45rem); font-weight: 700; font-family: var(--mono); line-height: 1; }
-.g-divider { font-size: .85rem; color: var(--tx3); }
+.g-score-row { display: flex; align-items: center; gap: .4rem; }
+
+/* Each team block is a pill with team colour background */
+.g-team {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: .35rem;
+  background: rgba(255,255,255,0.05);
+  border-radius: 8px;
+  padding: .25rem .6rem;
+  min-width: 72px;
+}
+.g-team.t1 { border-left: 3px solid var(--t1); }
+.g-team.t2 { border-left: 3px solid var(--t2); }
+.g-team-label {
+  font-size: .58rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  font-family: var(--mono);
+  white-space: nowrap;
+  opacity: .8;
+}
+.g-team-score {
+  font-size: clamp(1.1rem, 4vw, 1.55rem);
+  font-weight: 700;
+  font-family: var(--mono);
+  line-height: 1;
+}
+.g-divider { font-size: 1rem; color: var(--tx3); padding: 0 .1rem; }
 
 /* Round info row */
-.g-rnd { font-size: .56rem; font-family: var(--mono); color: var(--tx3); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.g-rnd { font-size: .56rem; font-family: var(--mono); color: var(--tx3); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; margin-top: 2px; }
 .g-rnd em { color: var(--gold); font-style: normal; font-weight: 700; }
 
 /* Right slot — turn + history */
 .g-hdr-right { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
-.g-turn { font-size: .6rem; font-family: var(--mono); color: var(--tx2); white-space: nowrap; }
+.g-turn {
+  font-size: .62rem;
+  font-family: var(--mono);
+  color: var(--tx2);
+  white-space: nowrap;
+  background: rgba(255,255,255,0.05);
+  border-radius: 6px;
+  padding: .18rem .5rem;
+}
 .g-turn strong { color: var(--gold); }
 
 /* ── OPPONENTS STRIP ── */
@@ -294,16 +327,17 @@ html, body, #root {
   border: 1px solid rgba(255,255,255,0.06);
 }
 
-/* Tile row */
+/* Tile row — centered */
 .g-tiles {
   display: flex;
   gap: 6px;
   align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
   overflow-x: auto;
   min-height: 70px;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: 2px;
-  padding-top: 2px;
+  padding: 2px 4px;
 }
 .g-tiles::-webkit-scrollbar { height: 3px; }
 .g-tiles::-webkit-scrollbar-thumb { background: var(--surf3); border-radius: 2px; }

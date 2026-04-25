@@ -324,21 +324,21 @@ export default function GameScreen({ room, myId, myHand, onPlayTile, onPass, onL
           <button className="btn bs bsm" onClick={onLeave} style={{padding:'.25rem .6rem',fontSize:'.7rem'}}>←</button>
         </div>
 
-        <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:1}}>
+        <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:0}}>
           <div className="g-score-row">
-            <div className="g-team">
-              <div className="g-team-label tc1">Team 1</div>
+            <div className="g-team t1">
+              <div className="g-team-label tc1">T1</div>
               <div className="g-team-score tc1">{scores.t1}</div>
             </div>
-            <div className="g-divider">—</div>
-            <div className="g-team">
-              <div className="g-team-label tc2">Team 2</div>
+            <div className="g-divider">·</div>
+            <div className="g-team t2">
+              <div className="g-team-label tc2">T2</div>
               <div className="g-team-score tc2">{scores.t2}</div>
             </div>
           </div>
           <div className="g-rnd">
             {lastRound
-              ? <><em>Rnd {lastRound.round}: +{lastRound.points}pts T{lastRound.winTeam}{lastRound.capicu?' ⚡':''}</em> · Rnd {game.roundNum||1}</>
+              ? <><em>+{lastRound.points}pts T{lastRound.winTeam}{lastRound.capicu?' ⚡':''}</em> · Rnd {game.roundNum||1} of {room.target||100}</>
               : <>Rnd {game.roundNum||1} · First to {room.target||100}</>
             }
           </div>
