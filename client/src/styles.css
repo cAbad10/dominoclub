@@ -12,7 +12,6 @@
   --gold2: #b8892e;
   --green: #4caf7d;
   --red: #e05252;
-  --blue: #5b9bd5;
   --t1: #d4a843;
   --t2: #5b9bd5;
   --bone: #f4efe4;
@@ -21,41 +20,35 @@
   --pip: #1a1714;
   --font: 'Syne', sans-serif;
   --mono: 'JetBrains Mono', monospace;
-
-  /* Responsive tile sizes */
-  --tile-half: 28px;
-  --tile-gap: 3px;
 }
-
-@media (min-width: 480px) { :root { --tile-half: 30px; --tile-gap: 4px; } }
-@media (min-width: 768px) { :root { --tile-half: 34px; --tile-gap: 4px; } }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html, body {
+html, body, #root {
   width: 100%; height: 100%;
   overflow: hidden;
   background: var(--bg);
   color: var(--tx);
   font-family: var(--font);
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 /* ── SCREENS ── */
 .screen {
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  min-height: 100vh; padding: 1.5rem;
-  overflow-y: auto;
+  width: 100%; min-height: 100vh;
+  padding: 1.5rem; overflow-y: auto;
 }
 
 /* ── HOME ── */
-.logo { font-size: clamp(2rem, 8vw, 3rem); font-weight: 700; letter-spacing: -2px; margin-bottom: .3rem; }
+.logo { font-size: clamp(2.2rem, 8vw, 3.2rem); font-weight: 700; letter-spacing: -2px; margin-bottom: .3rem; }
 .logo em { color: var(--gold); font-style: normal; }
-.sub { font-family: var(--mono); font-size: .72rem; color: var(--tx2); letter-spacing: .15em; text-transform: uppercase; margin-bottom: 2rem; }
+.sub { font-family: var(--mono); font-size: .72rem; color: var(--tx2); letter-spacing: .15em; text-transform: uppercase; margin-bottom: 2rem; text-align: center; }
 .home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem; max-width: 380px; width: 100%; }
 .hcard { background: var(--surf); border: 1px solid var(--br); border-radius: 14px; padding: 1.4rem 1.2rem; cursor: pointer; transition: all .2s; text-align: center; }
-.hcard:hover { border-color: var(--gold); background: var(--surf2); transform: translateY(-2px); }
+.hcard:hover, .hcard:active { border-color: var(--gold); background: var(--surf2); transform: translateY(-2px); }
 .hci { font-size: 1.5rem; margin-bottom: .4rem; }
 .hct { font-size: .92rem; font-weight: 700; margin-bottom: .15rem; }
 .hcd { font-size: .7rem; color: var(--tx2); }
@@ -74,8 +67,8 @@ html, body {
 .bp { background: var(--gold); color: #1a1200; }
 .bp:hover { background: var(--gold2); }
 .bs { background: var(--surf2); color: var(--tx); border: 1px solid var(--br); }
-.bs:hover { border-color: var(--gold); }
-.bsm { padding: .28rem .65rem; font-size: .72rem; width: auto; margin-top: 0; }
+.bs:hover, .bs:active { border-color: var(--gold); }
+.bsm { padding: .32rem .8rem; font-size: .75rem; width: auto; margin-top: 0; }
 .bk { display: flex; align-items: center; gap: .35rem; background: none; border: none; color: var(--tx2); cursor: pointer; font-family: var(--font); font-size: .8rem; margin-bottom: .9rem; padding: 0; }
 .bk:hover { color: var(--tx); }
 
@@ -84,10 +77,12 @@ html, body {
 .pills { display: flex; gap: .3rem; background: var(--surf2); border-radius: 8px; padding: 3px; margin-bottom: .75rem; }
 .pill { flex: 1; padding: .38rem; border-radius: 6px; border: none; background: none; color: var(--tx2); cursor: pointer; font-family: var(--font); font-size: .78rem; font-weight: 500; transition: all .15s; text-align: center; }
 .pill.on { background: var(--surf3); color: var(--tx); }
+.tc1 { color: var(--t1); }
+.tc2 { color: var(--t2); }
 
 /* ── LOBBY ── */
 .lw { display: grid; grid-template-columns: 1fr 250px; gap: .9rem; max-width: 760px; width: 100%; }
-@media (max-width: 640px) { .lw { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .lw { grid-template-columns: 1fr; } .home-grid { grid-template-columns: 1fr; } }
 .pan { background: var(--surf); border: 1px solid var(--br); border-radius: 13px; padding: 1.1rem; }
 .pt { font-size: .65rem; color: var(--tx2); text-transform: uppercase; letter-spacing: .1em; font-family: var(--mono); margin-bottom: .75rem; }
 .rcode { font-size: 1.9rem; font-weight: 700; font-family: var(--mono); color: var(--gold); letter-spacing: .2em; margin-bottom: .3rem; }
@@ -98,8 +93,6 @@ html, body {
 .ps.emp { opacity: .4; align-items: center; justify-content: center; }
 .pn { font-weight: 700; font-size: .82rem; }
 .ptg { font-size: .62rem; font-family: var(--mono); }
-.tc1 { color: var(--t1); }
-.tc2 { color: var(--t2); }
 .rb { font-size: .6rem; background: var(--green); color: #fff; border-radius: 20px; padding: 1px 6px; display: inline-block; width: fit-content; }
 .wb { font-size: .6rem; background: var(--surf3); color: var(--tx2); border-radius: 20px; padding: 1px 6px; display: inline-block; width: fit-content; }
 .sr { display: flex; justify-content: space-between; align-items: center; margin-bottom: .42rem; }
@@ -110,173 +103,170 @@ html, body {
 .cm span { color: var(--tx); font-weight: 500; }
 .crow { display: flex; gap: .35rem; }
 
-/* ═══════════════════════════════════════════════
-   GAME LAYOUT — fully responsive
-   Mobile (<640px): hide side panels, stack vertically
-   Tablet/Desktop: full 5-zone grid
-   ═══════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   GAME SCREEN
+   Uses a flex-column that fills the full viewport.
+   Sections have fixed heights except the TABLE which
+   takes all remaining space via flex: 1.
+   ═══════════════════════════════════════════════════════ */
 
-.game-grid {
-  position: absolute;
+.game-wrap {
+  position: fixed;
   inset: 0;
-  display: grid;
-  grid-template-rows: auto auto 1fr auto;
-  grid-template-columns: 1fr;
-  grid-template-areas:
-    "hdr"
-    "top"
-    "tbl"
-    "hnd";
+  display: flex;
+  flex-direction: column;
   background: var(--bg);
   overflow: hidden;
 }
 
-/* Desktop — show side players */
-@media (min-width: 640px) {
-  .game-grid {
-    grid-template-rows: auto auto 1fr auto;
-    grid-template-columns: 72px 1fr 72px;
-    grid-template-areas:
-      "hdr hdr hdr"
-      "tl  top  tr"
-      "lft tbl  rgt"
-      "hnd hnd  hnd";
-  }
-}
-
 /* ── HEADER ── */
-.ghdr {
-  grid-area: hdr;
+.g-hdr {
+  flex: 0 0 52px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: .4rem .75rem;
+  padding: 0 .75rem;
   background: var(--surf);
   border-bottom: 1px solid var(--br);
   gap: .5rem;
-  flex-wrap: nowrap;
-  min-height: 48px;
+  position: relative;
+  z-index: 10;
 }
 
-/* Score block */
-.score-cluster {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
+/* Left slot */
+.g-hdr-left { flex-shrink: 0; display: flex; align-items: center; gap: .35rem; }
+
+/* Center score block */
+.g-hdr-center {
   flex: 1;
-  justify-content: center;
-}
-.score-team-block {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 52px;
+  justify-content: center;
+  gap: 1px;
+  overflow: hidden;
 }
-.score-label {
-  font-size: .55rem;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  font-family: var(--mono);
-  white-space: nowrap;
-}
-.score-number {
-  font-size: clamp(1rem, 4vw, 1.4rem);
-  font-weight: 700;
-  font-family: var(--mono);
-  line-height: 1;
-}
-.score-divider { font-size: .9rem; color: var(--tx3); }
+.g-score-row { display: flex; align-items: center; gap: .5rem; }
+.g-team { display: flex; flex-direction: column; align-items: center; min-width: 44px; }
+.g-team-label { font-size: .52rem; text-transform: uppercase; letter-spacing: .08em; font-family: var(--mono); white-space: nowrap; }
+.g-team-score { font-size: clamp(1rem, 4vw, 1.45rem); font-weight: 700; font-family: var(--mono); line-height: 1; }
+.g-divider { font-size: .85rem; color: var(--tx3); }
 
-/* Round points display under scores */
-.round-pts {
-  font-size: .58rem;
-  font-family: var(--mono);
-  color: var(--tx3);
-  text-align: center;
-  white-space: nowrap;
-}
-.round-pts span { color: var(--gold); font-weight: 700; }
+/* Round info row */
+.g-rnd { font-size: .56rem; font-family: var(--mono); color: var(--tx3); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.g-rnd em { color: var(--gold); font-style: normal; font-weight: 700; }
 
-/* ── CORNERS ── */
-.tcn { background: var(--surf); border-bottom: 1px solid var(--br); display: none; }
-@media (min-width: 640px) { .tcn { display: block; } }
-#corner-tl { grid-area: tl; border-right: 1px solid var(--br); }
-#corner-tr { grid-area: tr; border-left: 1px solid var(--br); }
+/* Right slot — turn + history */
+.g-hdr-right { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.g-turn { font-size: .6rem; font-family: var(--mono); color: var(--tx2); white-space: nowrap; }
+.g-turn strong { color: var(--gold); }
 
-/* ── PLAYER STRIPS ── */
-.player-top {
-  grid-area: top;
+/* ── OPPONENTS STRIP ── */
+.g-opps {
+  flex: 0 0 auto;
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+  padding: .3rem .5rem;
   background: var(--surf);
   border-bottom: 1px solid var(--br2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  padding: .3rem .75rem;
-  min-height: 60px;
-}
-/* On mobile show left/right players in top strip too */
-@media (max-width: 639px) {
-  .player-top { gap: .5rem; }
+  gap: .25rem;
+  flex-wrap: nowrap;
+  overflow: hidden;
 }
 
-.player-side {
-  background: var(--surf);
-  display: none;
+/* ── MIDDLE ROW (side + table + side) ── */
+.g-mid {
+  flex: 1;
+  display: flex;
+  min-height: 0; /* CRITICAL — lets flex shrink properly */
+  overflow: hidden;
+}
+
+.g-side {
+  flex: 0 0 64px;
+  display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: .3rem .2rem;
-  gap: .3rem;
+  background: var(--surf);
+  padding: .25rem .1rem;
+  gap: .25rem;
+  overflow: hidden;
 }
-@media (min-width: 640px) {
-  .player-side { display: flex; }
-  #side-lft { grid-area: lft; border-right: 1px solid var(--br); }
-  #side-rgt { grid-area: rgt; border-left: 1px solid var(--br); }
+.g-side-l { border-right: 1px solid var(--br); }
+.g-side-r { border-left: 1px solid var(--br); }
+
+/* Hide sides on narrow screens — opponents shown in top strip instead */
+@media (max-width: 520px) {
+  .g-side { display: none; }
 }
 
-/* ── TABLE ── */
-.table-area {
-  grid-area: tbl;
+/* The green felt table */
+.g-table {
+  flex: 1;
   position: relative;
   overflow: hidden;
-  min-height: 0; /* allow grid to shrink it */
+  min-width: 0;
 }
 
 /* ── HAND TRAY ── */
-.hand-tray {
-  grid-area: hnd;
+.g-hand {
+  flex: 0 0 auto;
+  min-height: 120px;
   background: var(--surf);
   border-top: 2px solid var(--br2);
   display: flex;
   flex-direction: column;
-  padding: .4rem .75rem .3rem;
-  gap: .3rem;
-  flex-shrink: 0;
+  padding: .45rem .75rem .4rem;
+  gap: .35rem;
 }
-.hand-top-bar {
+
+/* Top bar: player name + hint on left, action btns on right */
+.g-hand-bar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: .5rem;
+}
+.g-hand-info { display: flex; flex-direction: column; gap: 2px; }
+.hlbl { font-size: .64rem; text-transform: uppercase; letter-spacing: .08em; font-family: var(--mono); color: var(--tx2); }
+.hhin { font-size: .6rem; color: var(--tx3); font-family: var(--mono); }
+
+/* Actions — pass / end choice centered below hand info */
+.g-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  gap: .4rem;
   flex-wrap: wrap;
-  gap: .3rem;
+  margin: 0 auto;
 }
-.hlbl { font-size: .62rem; text-transform: uppercase; letter-spacing: .1em; font-family: var(--mono); color: var(--tx2); }
-.hhin { font-size: .6rem; color: var(--tx3); font-family: var(--mono); margin-top: 1px; }
-.hand-tiles {
+
+/* Full-width centered pass button when no other actions */
+.g-pass-center {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: .1rem 0;
+}
+
+/* Tile row */
+.g-tiles {
   display: flex;
   gap: 5px;
   align-items: flex-end;
   overflow-x: auto;
-  padding-bottom: 3px;
-  min-height: 62px;
+  min-height: 66px;
   -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+  padding-top: 2px;
 }
-.hand-tiles::-webkit-scrollbar { height: 3px; }
-.hand-tiles::-webkit-scrollbar-thumb { background: var(--surf3); border-radius: 2px; }
+.g-tiles::-webkit-scrollbar { height: 3px; }
+.g-tiles::-webkit-scrollbar-thumb { background: var(--surf3); border-radius: 2px; }
 
 /* ── MODALS ── */
-.mw { position: absolute; inset: 0; background: rgba(0,0,0,.75); display: none; align-items: center; justify-content: center; z-index: 100; padding: 1rem; }
+.mw { position: fixed; inset: 0; background: rgba(0,0,0,.75); display: none; align-items: center; justify-content: center; z-index: 100; padding: 1rem; }
 .mw.open { display: flex; }
 .modal { background: var(--surf); border: 1px solid var(--br2); border-radius: 16px; padding: 1.4rem; max-width: 460px; width: 100%; text-align: center; max-height: 90vh; overflow-y: auto; }
 .mt { font-size: 1.2rem; font-weight: 700; margin-bottom: .3rem; }
@@ -287,7 +277,7 @@ html, body {
 .mbv { font-size: 1.7rem; font-weight: 700; font-family: var(--mono); }
 
 /* ── TOAST ── */
-.ntf { position: fixed; top: .5rem; left: 50%; transform: translateX(-50%); background: var(--surf2); border: 1px solid var(--br2); border-radius: 7px; padding: .4rem .9rem; font-size: .72rem; font-family: var(--mono); z-index: 200; pointer-events: none; white-space: nowrap; opacity: 0; transition: opacity .25s; }
+.ntf { position: fixed; top: 56px; left: 50%; transform: translateX(-50%); background: var(--surf2); border: 1px solid var(--br2); border-radius: 7px; padding: .4rem .9rem; font-size: .72rem; font-family: var(--mono); z-index: 200; pointer-events: none; white-space: nowrap; opacity: 0; transition: opacity .25s; }
 .ntf.show { opacity: 1; }
 
 /* ── DROP ZONE PULSE ── */
@@ -297,8 +287,3 @@ html, body {
 ::-webkit-scrollbar { width: 3px; height: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--surf3); border-radius: 2px; }
-
-/* Mobile: show side players in top strip */
-@media (max-width: 639px) {
-  .mobile-side-player { display: block !important; }
-}
