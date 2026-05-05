@@ -157,77 +157,69 @@ function EndZone({ side, value, active, onDrop, onClick }) {
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CUBAN CHAIN LAYOUT
-//
-// Traditional Cuban format:
-//   • Regular tiles: HORIZONTAL (landscape) — lie flat along the chain direction
-//     → width = TH (long), height = TW (short)
-//   • Doubles: VERTICAL (portrait) — stand perpendicular to the chain
-//     → width = TW (short), height = TH (long) — centered on the chain's midline
-//
-// Snake pattern:
-//   1. Start in the middle, go RIGHT
-//   2. When MAX_ROW tiles placed → turn DOWN one row, go LEFT
-//   3. When MAX_ROW tiles placed → turn DOWN again, go RIGHT
-//   → Forms a snake / U shape
-// ─────────────────────────────────────────────────────────────────────────────
-
 // Tile dimensions — match Domino component output for size='normal' (half=30)
-// Regular tiles lie flat along the chain (landscape): long axis = chain direction
-// Doubles stand perpendicular to the chain (portrait): long axis = up/down
-const TW = 34   // short dimension  (half + 4)
-const TH = 63   // long dimension   (half * 2 + 3)
-const GAP = 3   // gap between tiles
+// Regular tiles: landscape (long axis along chain). Doubles: portrait (perpendicular).
+const TW = 34   // short dimension (half + 4)
+const TH = 63   // long dimension  (half * 2 + 3)
+const GAP = 3
+
+// Build one arm of the chain. cx is always the LEFT EDGE cursor.
+// dir=+1 → going right; dir=-1 → going left (tiles still placed at cx, cx decreases).
+// After MAX_PER_ROW tiles, the arm snakes: y drops, direction flips, cx stays (corner column).
+function buildArm(entries, startX, dir, maxPerRow) {
+  const ROW_GAP = 12
+  const items = []
+  let cx = startX, cy = 0, d = dir, count = 0
+  entries.forEach((entry, i) => {
+    const isDbl = entry.tile[0] === entry.tile[1]
+    const w = isDbl ? TW : TH
+    const h = isDbl ? TH : TW
+    const yOff = isDbl ? -((TH - TW) / 2) : 0
+    items.push({ entry, x: cx, y: cy + yOff, w, h, isDbl })
+    count++
+    if (count >= maxPerRow && i < entries.length - 1) {
+      cy += TW + ROW_GAP; d *= -1; count = 0
+      // don't advance cx — corner tile shared between rows
+    } else {
+      cx += d * (w + GAP)
+    }
+  })
+  return items
+}
 
 function buildChainLayout(chain) {
   if (!chain.length) return []
 
-  const MAX_ROW = 8   // tiles per row before snaking
-  const ROW_GAP = 12  // extra vertical gap between rows
+  const MAX_PER_ROW = 8
 
-  const items = []
-  let cx = 0
-  let cy = 0
-  let dir = 1        // 1=right, -1=left
-  let rowCount = 0
+  // Opening tile has no `side` property (it was the first played)
+  const pivotIdx = chain.findIndex(e => !e.side)
+  const pivot = pivotIdx >= 0 ? pivotIdx : 0
 
-  chain.forEach((entry, i) => {
-    const isDbl = entry.tile[0] === entry.tile[1]
-    // Regular: landscape → w=TH (long), h=TW (short)
-    // Double:  portrait  → w=TW (short), h=TH (long)
-    const w = isDbl ? TW : TH
-    const h = isDbl ? TH : TW
+  // Right arm: pivot → end, starts at x=0 going right
+  const rightArm = chain.slice(pivot)
+  const rightItems = buildArm(rightArm, 0, 1, MAX_PER_ROW)
 
-    // Center doubles vertically on the chain's midline (row height = TW)
-    const yOff = isDbl ? -((TH - TW) / 2) : 0
+  // Left arm: tiles before pivot, nearest-to-pivot first, going left from pivot
+  const leftArm = chain.slice(0, pivot).reverse()
+  if (!leftArm.length) {
+    const minX = Math.min(...rightItems.map(it => it.x))
+    const minY = Math.min(...rightItems.map(it => it.y))
+    rightItems.forEach(it => { it.x -= minX; it.y -= minY })
+    return rightItems
+  }
 
-    items.push({
-      entry,
-      x: cx,
-      y: cy + yOff,
-      w, h, isDbl,
-    })
+  // Build left arm internally starting at x=0 going left, then shift so
+  // tile-0's right edge sits at -GAP (just left of pivot's left edge at x=0)
+  const leftItemsRaw = buildArm(leftArm, 0, -1, MAX_PER_ROW)
+  const leftShift = -(leftItemsRaw[0].w + GAP)
+  const leftItems = leftItemsRaw.map(it => ({ ...it, x: it.x + leftShift }))
 
-    rowCount++
-
-    if (rowCount >= MAX_ROW && i < chain.length - 1) {
-      // Turn: drop down to next row, flip direction
-      cy += TW + ROW_GAP
-      dir *= -1
-      rowCount = 0
-      // After turning, don't advance x — next tile starts at same x as last
-    } else {
-      cx += dir * (w + GAP)
-    }
-  })
-
-  // Normalize so minimum x,y = 0
-  const minX = Math.min(...items.map(it => it.x))
-  const minY = Math.min(...items.map(it => it.y))
-  items.forEach(it => { it.x -= minX; it.y -= minY })
-
-  return items
+  const all = [...rightItems, ...leftItems]
+  const minX = Math.min(...all.map(it => it.x))
+  const minY = Math.min(...all.map(it => it.y))
+  all.forEach(it => { it.x -= minX; it.y -= minY })
+  return all
 }
 
 function CubanChain({ chain }) {
