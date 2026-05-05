@@ -63,11 +63,17 @@ function buildChainEntry(tile, side, chain) {
   }
   const { L, R } = getChainEnds(chain);
   if (side === 'left') {
-    const flipped = tile[1] === L;
-    return { tile, eL: flipped ? tile[0] : tile[1], eR: flipped ? tile[1] : tile[0], flipped, side: 'left' };
+    // matching end must sit on the RIGHT of the tile (facing into the chain)
+    // flip when tile[0]===L so that tile[0] moves to the right side
+    const flipped = tile[0] === L;
+    const eL = flipped ? tile[1] : tile[0];
+    return { tile, eL, eR: L, flipped, side: 'left' };
   } else {
-    const flipped = tile[0] === R;
-    return { tile, eL: flipped ? tile[1] : tile[0], eR: flipped ? tile[0] : tile[1], flipped, side: 'right' };
+    // matching end must sit on the LEFT of the tile (facing into the chain)
+    // flip when tile[1]===R so that tile[1] moves to the left side
+    const flipped = tile[1] === R;
+    const eR = flipped ? tile[0] : tile[1];
+    return { tile, eL: R, eR, flipped, side: 'right' };
   }
 }
 

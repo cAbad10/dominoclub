@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import Domino from './Domino'
-import { canPlayTile, getChainEnds, tileMatchesEnd } from '../game/engine'
+import { canPlayTile, getChainEnds, tileMatchesEnd, PIP_MAPS } from '../game/engine'
 
 // ── FELT CANVAS ───────────────────────────────────────────────────────────────
 function FeltCanvas() {
@@ -106,8 +106,16 @@ function FirstTileZone({ active, onDrop, onClick }) {
 }
 
 // ── END DROP ZONE ─────────────────────────────────────────────────────────────
+// Renders as a pip-face half-domino showing the current open end value
 function EndZone({ side, value, active, onDrop, onClick }) {
   const [over, setOver] = useState(false)
+  const cellSize = 36
+  const pip = 6
+  const pad = 5
+  const inner = cellSize - pad * 2
+  const cell = inner / 3
+  const pos = (value !== null && value !== undefined) ? (PIP_MAPS[value] || []) : []
+
   return (
     <div
       onDragOver={e=>{e.preventDefault();if(active)setOver(true)}}
@@ -118,21 +126,33 @@ function EndZone({ side, value, active, onDrop, onClick }) {
       }}
       onClick={()=>{if(active)onClick(side)}}
       style={{
-        display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
-        border:`2px dashed ${over?'var(--gold)':active?'var(--green)':'rgba(255,255,255,0.1)'}`,
-        borderRadius:8,width:36,minHeight:60,padding:'4px 2px',
-        background:over?'rgba(212,168,67,0.1)':active?'rgba(76,175,125,0.05)':'transparent',
-        animation:active&&!over?'dp 1.2s infinite':'none',
-        transition:'all .15s',cursor:active?'pointer':'default',
-        flexShrink:0,gap:3,
+        width: cellSize, height: cellSize,
+        display: 'grid',
+        gridTemplateColumns: `repeat(3, ${cell}px)`,
+        gridTemplateRows: `repeat(3, ${cell}px)`,
+        padding: pad,
+        background: over ? 'rgba(212,168,67,0.12)' : active ? 'rgba(76,175,125,0.08)' : 'rgba(255,255,255,0.04)',
+        border: `2px dashed ${over ? 'var(--gold)' : active ? 'var(--green)' : 'rgba(255,255,255,0.15)'}`,
+        borderRadius: 6,
+        cursor: active ? 'pointer' : 'default',
+        flexShrink: 0,
+        boxShadow: over ? '0 0 10px rgba(212,168,67,0.35)' : active ? '0 0 6px rgba(76,175,125,0.25)' : 'none',
+        animation: active && !over ? 'dp 1.2s infinite' : 'none',
+        transition: 'all .15s',
       }}
     >
-      <div style={{fontSize:'.6rem',color:over?'var(--gold)':active?'var(--green)':'rgba(255,255,255,.2)',fontFamily:'var(--mono)'}}>
-        {side==='left'?'←':'→'}
-      </div>
-      <div style={{fontSize:'.7rem',fontWeight:700,color:over?'var(--gold)':'rgba(255,255,255,.35)',fontFamily:'var(--mono)'}}>
-        {value??'?'}
-      </div>
+      {Array.from({length: 9}, (_, i) => (
+        <div key={i} style={{display:'flex',alignItems:'center',justifyContent:'center',width:cell,height:cell}}>
+          {pos.includes(i) && (
+            <div style={{
+              width: pip, height: pip,
+              borderRadius: '50%',
+              background: over ? 'var(--gold)' : active ? 'var(--green)' : 'rgba(255,255,255,0.55)',
+              boxShadow: 'inset 0 1px 1px rgba(0,0,0,0.3)',
+            }}/>
+          )}
+        </div>
+      ))}
     </div>
   )
 }
@@ -425,7 +445,7 @@ export default function GameScreen({ room, myId, myHand, onPlayTile, onPass, onL
         {(isNeedPass || showEndBtns) && (
           <div className="g-float-actions">
             {isNeedPass && (
-              <button className="btn-paso" onClick={onPass}>Paso</button>
+              <button className="btn-paso" onClick={onPass}>Pass</button>
             )}
             {showEndBtns && (
               <>
