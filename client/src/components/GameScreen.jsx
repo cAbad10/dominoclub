@@ -140,35 +140,31 @@ function EndZone({ side, value, active, onDrop, onClick }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // CUBAN CHAIN LAYOUT
 //
-// From the reference image:
-//   • Regular tiles: VERTICAL (portrait) — narrow side horizontal, tall side vertical
-//     → width = TW (narrow), height = TH (tall)
-//   • Doubles: HORIZONTAL (landscape) — wider than tall, perpendicular to the chain
-//     → width = DW (wide), height = DH (short) — centered on the chain's vertical midline
+// Traditional Cuban format:
+//   • Regular tiles: HORIZONTAL (landscape) — lie flat along the chain direction
+//     → width = TH (long), height = TW (short)
+//   • Doubles: VERTICAL (portrait) — stand perpendicular to the chain
+//     → width = TW (short), height = TH (long) — centered on the chain's midline
 //
-// Chain direction pattern (like the reference image):
+// Snake pattern:
 //   1. Start in the middle, go RIGHT
-//   2. When MAX_ROW tiles placed → last tile of that row acts as CORNER, chain turns DOWN one row
-//   3. Continue going LEFT
-//   4. When MAX_ROW tiles placed → turn DOWN again, go RIGHT
+//   2. When MAX_ROW tiles placed → turn DOWN one row, go LEFT
+//   3. When MAX_ROW tiles placed → turn DOWN again, go RIGHT
 //   → Forms a snake / U shape
-//
-// The corner turn is achieved by the chain algorithm shifting Y and flipping direction.
-// No special "corner tile" — just a tight gap makes the turn visually clear.
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Tile dimensions (pixels)
-const TW = 32   // regular tile width  (vertical portrait)
-const TH = 62   // regular tile height (vertical portrait)
-const DW = 62   // double tile width   (horizontal landscape)
-const DH = 32   // double tile height  (horizontal landscape)
+// Tile dimensions — match Domino component output for size='normal' (half=30)
+// Regular tiles lie flat along the chain (landscape): long axis = chain direction
+// Doubles stand perpendicular to the chain (portrait): long axis = up/down
+const TW = 34   // short dimension  (half + 4)
+const TH = 63   // long dimension   (half * 2 + 3)
 const GAP = 3   // gap between tiles
 
 function buildChainLayout(chain) {
   if (!chain.length) return []
 
   const MAX_ROW = 8   // tiles per row before snaking
-  const ROW_GAP = 10  // extra vertical gap between rows
+  const ROW_GAP = 12  // extra vertical gap between rows
 
   const items = []
   let cx = 0
@@ -178,11 +174,13 @@ function buildChainLayout(chain) {
 
   chain.forEach((entry, i) => {
     const isDbl = entry.tile[0] === entry.tile[1]
-    const w = isDbl ? DW : TW
-    const h = isDbl ? DH : TH
+    // Regular: landscape → w=TH (long), h=TW (short)
+    // Double:  portrait  → w=TW (short), h=TH (long)
+    const w = isDbl ? TW : TH
+    const h = isDbl ? TH : TW
 
-    // Center all tiles vertically within the row (row height = TH)
-    const yOff = isDbl ? (TH - DH) / 2 : 0
+    // Center doubles vertically on the chain's midline (row height = TW)
+    const yOff = isDbl ? -((TH - TW) / 2) : 0
 
     items.push({
       entry,
@@ -195,7 +193,7 @@ function buildChainLayout(chain) {
 
     if (rowCount >= MAX_ROW && i < chain.length - 1) {
       // Turn: drop down to next row, flip direction
-      cy += TH + ROW_GAP
+      cy += TW + ROW_GAP
       dir *= -1
       rowCount = 0
       // After turning, don't advance x — next tile starts at same x as last
@@ -204,9 +202,10 @@ function buildChainLayout(chain) {
     }
   })
 
-  // Normalize so minimum x = 0
+  // Normalize so minimum x,y = 0
   const minX = Math.min(...items.map(it => it.x))
-  items.forEach(it => { it.x -= minX })
+  const minY = Math.min(...items.map(it => it.y))
+  items.forEach(it => { it.x -= minX; it.y -= minY })
 
   return items
 }
@@ -225,7 +224,7 @@ function CubanChain({ chain }) {
           <Domino
             tile={entry.tile}
             flipped={entry.flipped || false}
-            horizontal={isDbl}   // doubles rendered wide/flat, regular tiles tall/vertical
+            horizontal={!isDbl}  // regular tiles lie flat along chain; doubles stand perpendicular
             onBoard
           />
         </div>
